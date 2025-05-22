@@ -199,6 +199,51 @@ elif tab == "Feedback Analysis":
 elif tab == "Infrastructure Monitor":
     st.subheader("⚙️ Infrastructure Status")
 
+    # Data entry form for new infrastructure status
+    with st.expander("➕ Add Infrastructure Status"):
+        with st.form("add_infra_form"):
+            new_location = st.text_input("Location")
+            new_generator_ok = st.selectbox("Generator OK?", ["Yes", "No"])
+            new_pump_ok = st.selectbox("Pump OK?", ["Yes", "No"])
+            new_pipe_leak = st.selectbox("Pipe Leak?", ["No", "Yes"])
+            new_road_condition = st.selectbox("Road Condition", ["Good", "Muddy", "Flooded"])
+            new_comments = st.text_area("Comments")
+            new_water_available = st.number_input("Water Available (Liters)", min_value=0, max_value=1000, step=1)
+            submitted = st.form_submit_button("Add Status")
+            if submitted and new_location:
+                new_row = {
+                    "location": new_location,
+                    "generator_ok": new_generator_ok,
+                    "pump_ok": new_pump_ok,
+                    "pipe_leak": new_pipe_leak,
+                    "road_condition": new_road_condition,
+                    "comments": new_comments,
+                    "water_available_liters": new_water_available
+                }
+                infra_df.loc[len(infra_df)] = new_row
+                st.success("Infrastructure status added!")
+
+                # Check for alert condition and send SMS if needed
+                def check_flag(row):
+                    flags = []
+                    if row["generator_ok"] == "No":
+                        flags.append("🛑 Generator Failure")
+                    if row["pump_ok"] == "No":
+                        flags.append("🛑 Pump Fault")
+                    if row["pipe_leak"] == "Yes":
+                        flags.append("💧 Pipe Leak")
+                    if row["road_condition"] in ["Flooded", "Muddy"] and row["generator_ok"] == "Yes":
+                        flags.append("🚫 Fuel Delivery Blocked")
+                    return ", ".join(flags) if flags else "✅ OK"
+
+                status = check_flag(new_row)
+                if status != "✅ OK" or new_water_available < 10:
+                    subject = f"WASH Alert: {new_location} – {status}"
+                    body = f"Issue detected in {new_location} with status: {status}\nComments: {new_comments}\nWater Available: {new_water_available}L\nRoad Condition: {new_road_condition}"
+                    send_alert_email(subject, body)
+                    send_sms_alert(body)
+                    st.warning("🚨 Alert sent via Email and SMS!")
+
     def check_flag(row):
         flags = []
         if row["generator_ok"] == "No":
