@@ -111,11 +111,11 @@ if tab == "Chlorine Monitor":
 
     # Data entry form for new chlorine reading
     with st.expander("➕ Add Chlorine Reading"):
-        with st.form("add_chlorine_form"):
+        with st.form("add_chlorine_form", clear_on_submit=True):
             new_tap_id = st.text_input("Tap Stand ID")
             new_timestamp = st.datetime_input("Timestamp")
             new_level = st.number_input("Chlorine Level (mg/L)", min_value=0.0, max_value=2.0, step=0.01)
-            submitted = st.form_submit_button("Add Reading")
+            submitted = st.form_submit_button("Add Reading")  # <-- This line ensures the submit button is present
             if submitted and new_tap_id:
                 new_row = {
                     "tap_stand_id": new_tap_id,
