@@ -61,7 +61,7 @@ chlorine_df, water_quality_df, feedback_df, infra_df = load_data()
 
 # Sidebar navigation
 tab = st.sidebar.radio("Select Module", [
-    "Chlorine Monitor",
+    # "Chlorine Monitor",   # <-- Remove or comment out this line
     "Water Treatment",
     "Feedback Analysis",
     "Infrastructure Monitor"
@@ -105,45 +105,11 @@ def send_sms_alert(body):
     except Exception as e:
         print("❌ SMS failed:", e)
 
-# --- Chlorine Monitor ---
-if tab == "Chlorine Monitor":
-    st.subheader("🧪 Chlorine Level Monitor")
-
-    # Data entry form for new chlorine reading
-    with st.expander("➕ Add Chlorine Reading"):
-        with st.form("add_chlorine_form", clear_on_submit=True):
-            new_tap_id = st.text_input("Tap Stand ID")
-            new_date = st.date_input("Date")
-            new_time = st.time_input("Time")
-            new_level = st.number_input("Chlorine Level (mg/L)", min_value=0.0, max_value=2.0, step=0.01)
-            submitted = st.form_submit_button("Add Reading")
-            if submitted and new_tap_id:
-                import datetime
-                new_timestamp = datetime.datetime.combine(new_date, new_time)
-                new_row = {
-                    "tap_stand_id": new_tap_id,
-                    "timestamp": new_timestamp,
-                    "chlorine_level": new_level
-                }
-                chlorine_df.loc[len(chlorine_df)] = new_row
-                st.success("Chlorine reading added!")
-
-    def check_anomaly(level):
-        if level < 0.2:
-            return "🔴 Low – Re-dose"
-        elif level > 0.5:
-            return "🔴 High – Re-check"
-        else:
-            return "✅ OK"
-
-    chlorine_df["status"] = chlorine_df["chlorine_level"].apply(check_anomaly)
-    st.dataframe(chlorine_df)
-
 # --- Water Treatment ---
-elif tab == "Water Treatment":
+if tab == "Water Treatment":
     st.subheader("💧 Water Treatment Recommendations")
 
-    # --- Chlorine Monitor (Moved here) ---
+    # --- Chlorine Monitor (now only here) ---
     st.markdown("### 🧪 Chlorine Level Monitor")
 
     # Data entry form for new chlorine reading
@@ -198,10 +164,6 @@ elif tab == "Water Treatment":
 
     water_quality_df["treatment"] = water_quality_df["turbidity"].apply(recommend)
     st.dataframe(water_quality_df)
-
-# Remove the original Chlorine Monitor tab
-if tab == "Chlorine Monitor":
-    st.info("The Chlorine Monitor is now part of the Water Treatment tab.")
 
 # --- Feedback Analysis ---
 elif tab == "Feedback Analysis":
