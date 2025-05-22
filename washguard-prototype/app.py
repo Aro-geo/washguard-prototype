@@ -89,10 +89,10 @@ def send_alert_email(subject, body):
 
 # SMS Alert Function (Twilio)
 def send_sms_alert(body):
-    account_sid = os.getenv("TWILIO_SID")
+    account_sid = os.getenv("TWILIO_SID", "AC90d1d2449012ddc5cb27ac9b4a52385d")
     auth_token = os.getenv("TWILIO_AUTH_TOKEN")
-    from_number = os.getenv("TWILIO_PHONE")
-    to_number = "+254726796020"
+    from_number = os.getenv("TWILIO_PHONE", "+13083373418")
+    to_number = os.getenv("ALERT_PHONE", "+254726796020")
 
     try:
         client = Client(account_sid, auth_token)
