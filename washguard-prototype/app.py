@@ -109,6 +109,22 @@ def send_sms_alert(body):
 if tab == "Chlorine Monitor":
     st.subheader("🧪 Chlorine Level Monitor")
 
+    # Data entry form for new chlorine reading
+    with st.expander("➕ Add Chlorine Reading"):
+        with st.form("add_chlorine_form"):
+            new_tap_id = st.text_input("Tap Stand ID")
+            new_timestamp = st.datetime_input("Timestamp")
+            new_level = st.number_input("Chlorine Level (mg/L)", min_value=0.0, max_value=2.0, step=0.01)
+            submitted = st.form_submit_button("Add Reading")
+            if submitted and new_tap_id:
+                new_row = {
+                    "tap_stand_id": new_tap_id,
+                    "timestamp": new_timestamp,
+                    "chlorine_level": new_level
+                }
+                chlorine_df.loc[len(chlorine_df)] = new_row
+                st.success("Chlorine reading added!")
+
     def check_anomaly(level):
         if level < 0.2:
             return "🔴 Low – Re-dose"
@@ -124,6 +140,22 @@ if tab == "Chlorine Monitor":
 elif tab == "Water Treatment":
     st.subheader("💧 Water Treatment Recommendations")
 
+    # Data entry form for new water quality reading
+    with st.expander("➕ Add Water Quality Reading"):
+        with st.form("add_water_quality_form"):
+            new_source_id = st.text_input("Source ID")
+            new_turbidity = st.number_input("Turbidity (NTU)", min_value=0.0, max_value=100.0, step=0.1)
+            new_odour = st.selectbox("Odour Present?", ["Yes", "No"])
+            submitted = st.form_submit_button("Add Water Quality")
+            if submitted and new_source_id:
+                new_row = {
+                    "source_id": new_source_id,
+                    "turbidity": new_turbidity,
+                    "odour_present": new_odour
+                }
+                water_quality_df.loc[len(water_quality_df)] = new_row
+                st.success("Water quality reading added!")
+
     def recommend(turbidity):
         return "PUR" if turbidity > 5 else "Aqua Tabs"
 
@@ -133,6 +165,20 @@ elif tab == "Water Treatment":
 # --- Feedback Analysis ---
 elif tab == "Feedback Analysis":
     st.subheader("🗣️ Community Feedback NLP")
+
+    # Data entry form for new feedback
+    with st.expander("➕ Add Feedback"):
+        with st.form("add_feedback_form"):
+            new_household_id = st.text_input("Household ID")
+            new_feedback = st.text_area("Feedback Text")
+            submitted = st.form_submit_button("Add Feedback")
+            if submitted and new_household_id and new_feedback:
+                new_row = {
+                    "household_id": new_household_id,
+                    "feedback_text": new_feedback
+                }
+                feedback_df.loc[len(feedback_df)] = new_row
+                st.success("Feedback added!")
 
     feedback_df["sentiment"] = feedback_df["feedback_text"].apply(lambda x: sentiment_analyzer(x)[0]["label"])
     st.dataframe(feedback_df)
