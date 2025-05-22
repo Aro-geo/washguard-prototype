@@ -9,9 +9,6 @@ import smtplib
 from email.mime.text import MIMEText
 from twilio.rest import Client
 import os
-from dotenv import load_dotenv
-
-load_dotenv()
 
 # Load sentiment pipeline
 sentiment_analyzer = pipeline("sentiment-analysis")
@@ -174,10 +171,7 @@ elif tab == "Infrastructure Monitor":
         for i, row in alerts.iterrows():
             st.write(f"🔧 **{row['location']}** – {row['status']}")
             subject = f"WASH Alert: {row['location']} – {row['status']}"
-            body = f"Issue detected in {row['location']} with status: {row['status']}
-Comments: {row['comments']}
-Water Available: {row['water_available_liters']}L
-Road Condition: {row['road_condition']}"
+            body = f"Issue detected in {row['location']} with status: {row['status']}\nComments: {row['comments']}\nWater Available: {row['water_available_liters']}L\nRoad Condition: {row['road_condition']}"
             send_alert_email(subject, body)
             send_sms_alert(body)
 
