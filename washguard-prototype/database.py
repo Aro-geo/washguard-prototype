@@ -76,3 +76,37 @@ cursor.executemany("""
 # Commit changes and close
 conn.commit()
 conn.close()
+
+def get_all_chlorine():
+    conn = sqlite3.connect("washguard.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT tap_stand_id, date, time, chlorine_level FROM chlorine")
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+def get_all_quality():
+    conn = sqlite3.connect("washguard.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT source_id, turbidity, odour_present FROM quality")
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+def get_all_feedback():
+    conn = sqlite3.connect("washguard.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT household_id, feedback_text FROM feedback")
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+def get_all_infrastructure():
+    conn = sqlite3.connect("washguard.db")
+    cursor = conn.cursor()
+    cursor.execute("SELECT location, generator_ok, pump_ok, pipe_leak, road_condition, comments, water_available_liters FROM infrastructure")
+    rows = cursor.fetchall()
+    conn.close()
+    return rows
+
+# Optionally, add insert functions if needed by your app
