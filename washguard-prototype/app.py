@@ -173,14 +173,28 @@ elif tab == "Infrastructure Monitor":
                 issues.append("💧 Leak")
             if row["road_condition"] in ["Muddy", "Flooded"] and row["generator_ok"] == "Yes":
                 issues.append("🚫 Fuel Delivery Blocked")
+            if row["water_available_liters"] < 10:
+                issues.append("❗ Low Water Reserves")
             return ", ".join(issues) if issues else "✅ OK"
         df["status"] = df.apply(flag, axis=1)
         st.dataframe(df)
 
-        # Send alerts for issues
+        # --- Alerts Table ---
+        alerts_df = df[df["status"] != "✅ OK"]
+        if not alerts_df.empty:
+            st.warning("🚨 Issues Detected in the Following Locations")
+            st.dataframe(alerts_df[["location", "status", "comments", "water_available_liters", "road_condition"]])
+
+            # --- Risk Score ---
+            st.markdown("**💡 Risk Prediction**")
+            st.markdown("Zones with < 10L, active faults, or fuel blockage are High Risk")
+            high_risk = alerts_df[alerts_df["water_available_liters"] < 10]
+            if not high_risk.empty:
+                st.dataframe(high_risk[["location", "water_available_liters", "status"]])
+
+        # --- Send Alerts (avoid duplicates) ---
         alerted_locations = set()
-        for _, row in df[df["status"] != "✅ OK"].iterrows():
-            # Avoid duplicate alerts for the same location in one run
+        for _, row in alerts_df.iterrows():
             if row['location'] not in alerted_locations:
                 subject = f"WASH Alert: {row['location']} – {row['status']}"
                 body = (
@@ -196,4 +210,4 @@ elif tab == "Infrastructure Monitor":
         st.info("No infrastructure data yet.")
 
 st.markdown("---")
-st.caption("Prototype v1.2 | Developed by George Arogo")   
+st.caption("Prototype v1.2 | Developed by George Arogo")
