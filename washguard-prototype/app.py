@@ -2,92 +2,46 @@
 
 import streamlit as st
 import pandas as pd
-from wordcloud import WordCloud
 import matplotlib.pyplot as plt
+from wordcloud import WordCloud
 from transformers import pipeline
-import smtplib
 from email.mime.text import MIMEText
 from twilio.rest import Client
+import smtplib
 import os
+import database as db
 
 # Load sentiment pipeline
 sentiment_analyzer = pipeline("sentiment-analysis")
 
-# Title
+# Page config
 st.set_page_config(page_title="WASHGuard AI Dashboard", layout="wide")
 st.title("🚰 WASHGuard AI Dashboard")
 
-# Load data (mock)
-@st.cache_data
-def load_data():
-    chlorine_df = pd.DataFrame({
-        "tap_stand_id": ["TS-001", "TS-002", "TS-003"],
-        "timestamp": pd.to_datetime(["2025-05-22 09:00", "2025-05-22 09:10", "2025-05-22 09:15"]),
-        "chlorine_level": [0.18, 0.26, 0.55]
-    })
-
-    water_quality_df = pd.DataFrame({
-        "source_id": ["WS-001", "WS-002"],
-        "turbidity": [7.2, 3.0],
-        "odour_present": ["Yes", "No"]
-    })
-
-    feedback_df = pd.DataFrame({
-        "household_id": ["HH-001", "HH-002", "HH-003"],
-        "feedback_text": [
-            "Water smells bad and no soap in stock",
-            "Latrine is clean, but chlorine taste is strong",
-            "Kids complain about dirty water and no aqua tabs"
-        ]
-    })
-
-    infra_df = pd.DataFrame({
-        "location": ["Zone A", "Zone B", "Zone C"],
-        "generator_ok": ["Yes", "No", "Yes"],
-        "pump_ok": ["Yes", "Yes", "No"],
-        "pipe_leak": ["No", "Yes", "No"],
-        "road_condition": ["Good", "Muddy", "Flooded"],
-        "comments": [
-            "All systems functional",
-            "Generator won't start, needs oil",
-            "Pump pressure low, maybe blockage"
-        ],
-        "water_available_liters": [20, 5, 8]
-    })
-
-    return chlorine_df, water_quality_df, feedback_df, infra_df
-
-chlorine_df, water_quality_df, feedback_df, infra_df = load_data()
-
 # Sidebar navigation
 tab = st.sidebar.radio("Select Module", [
-    # "Chlorine Monitor",   # <-- Remove or comment out this line
     "Water Treatment",
     "Feedback Analysis",
     "Infrastructure Monitor"
 ])
 
-# Email Alert Function (Real SMTP)
+# Alert Functions
 def send_alert_email(subject, body):
     sender_email = "your_email@gmail.com"
     receiver_email = "geokullo@gmail.com"
     password = os.getenv("EMAIL_PASSWORD")
-
     msg = MIMEText(body)
     msg["Subject"] = subject
     msg["From"] = sender_email
     msg["To"] = receiver_email
-
     try:
         server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
         server.login(sender_email, password)
         server.sendmail(sender_email, receiver_email, msg.as_string())
         server.quit()
-        print("✅ Email sent to", receiver_email)
     except Exception as e:
         print("❌ Email failed:", e)
 
-# SMS Alert Function (Twilio)
 def send_sms_alert(body):
     account_sid = os.getenv("TWILIO_SID", "AC90d1d2449012ddc5cb27ac9b4a52385d")
     auth_token = os.getenv("TWILIO_AUTH_TOKEN")
@@ -96,12 +50,11 @@ def send_sms_alert(body):
 
     try:
         client = Client(account_sid, auth_token)
-        message = client.messages.create(
+        client.messages.create(
             body=body,
             from_=from_number,
             to=to_number
         )
-        print("✅ SMS sent:", message.sid)
     except Exception as e:
         print("❌ SMS failed:", e)
 
@@ -109,174 +62,138 @@ def send_sms_alert(body):
 if tab == "Water Treatment":
     st.subheader("💧 Water Treatment Recommendations")
 
-    # --- Chlorine Monitor (now only here) ---
+    # Chlorine Level
     st.markdown("### 🧪 Chlorine Level Monitor")
-
-    # Data entry form for new chlorine reading
     with st.expander("➕ Add Chlorine Reading"):
-        with st.form("add_chlorine_form", clear_on_submit=True):
-            new_tap_id = st.text_input("Tap Stand ID")
-            new_date = st.date_input("Date")
-            new_time = st.time_input("Time")
-            new_level = st.number_input("Chlorine Level (mg/L)", min_value=0.0, max_value=2.0, step=0.01)
-            submitted = st.form_submit_button("Add Reading")
-            if submitted and new_tap_id:
-                import datetime
-                new_timestamp = datetime.datetime.combine(new_date, new_time)
-                new_row = {
-                    "tap_stand_id": new_tap_id,
-                    "timestamp": new_timestamp,
-                    "chlorine_level": new_level
-                }
-                chlorine_df.loc[len(chlorine_df)] = new_row
-                st.success("Chlorine reading added!")
+        with st.form("chlorine_form"):
+            tap_id = st.text_input("Tap Stand ID")
+            date = st.date_input("Date")
+            time = st.time_input("Time")
+            level = st.number_input("Chlorine Level (mg/L)", min_value=0.0, max_value=2.0)
+            submitted = st.form_submit_button("Submit")
+            if submitted:
+                if tap_id:
+                    db.insert_chlorine(tap_id, date.isoformat(), time.isoformat(), level)
+                    st.success("Chlorine reading submitted.")
+                else:
+                    st.error("Tap Stand ID required.")
 
-    def check_anomaly(level):
-        if level < 0.2:
-            return "🔴 Low – Re-dose"
-        elif level > 0.5:
-            return "🔴 High – Re-check"
-        else:
-            return "✅ OK"
+    chlorine_data = db.get_all_chlorine()
+    if chlorine_data:
+        df = pd.DataFrame(chlorine_data, columns=["tap_stand_id", "date", "time", "chlorine_level"])
+        df["status"] = df["chlorine_level"].apply(lambda x: "🔴 Low" if x < 0.2 else "🔴 High" if x > 0.5 else "✅ OK")
+        st.dataframe(df)
+    else:
+        st.info("No chlorine readings yet.")
 
-    chlorine_df["status"] = chlorine_df["chlorine_level"].apply(check_anomaly)
-    st.dataframe(chlorine_df)
-
-    # --- Water Quality Reading ---
-    st.markdown("### 💧 Water Quality Data Entry")
+    # Water Quality
+    st.markdown("### 💧 Water Quality Entry")
     with st.expander("➕ Add Water Quality Reading"):
-        with st.form("add_water_quality_form"):
-            new_source_id = st.text_input("Source ID")
-            new_turbidity = st.number_input("Turbidity (NTU)", min_value=0.0, max_value=100.0, step=0.1)
-            new_odour = st.selectbox("Odour Present?", ["Yes", "No"])
-            submitted = st.form_submit_button("Add Water Quality")
-            if submitted and new_source_id:
-                new_row = {
-                    "source_id": new_source_id,
-                    "turbidity": new_turbidity,
-                    "odour_present": new_odour
-                }
-                water_quality_df.loc[len(water_quality_df)] = new_row
-                st.success("Water quality reading added!")
+        with st.form("quality_form"):
+            source_id = st.text_input("Source ID")
+            turbidity = st.number_input("Turbidity (NTU)", 0.0, 100.0)
+            odour = st.selectbox("Odour Present?", ["Yes", "No"])
+            submitted = st.form_submit_button("Submit")
+            if submitted:
+                if source_id:
+                    db.insert_quality(source_id, turbidity, odour)
+                    st.success("Water quality submitted.")
+                else:
+                    st.error("Source ID required.")
 
-    def recommend(turbidity):
-        return "PUR" if turbidity > 5 else "Aqua Tabs"
-
-    water_quality_df["treatment"] = water_quality_df["turbidity"].apply(recommend)
-    st.dataframe(water_quality_df)
+    quality_data = db.get_all_quality()
+    if quality_data:
+        df_quality = pd.DataFrame(quality_data, columns=["source_id", "turbidity", "odour_present"])
+        df_quality["treatment"] = df_quality["turbidity"].apply(lambda x: "PUR" if x > 5 else "Aqua Tabs")
+        st.dataframe(df_quality)
+    else:
+        st.info("No water quality readings yet.")
 
 # --- Feedback Analysis ---
 elif tab == "Feedback Analysis":
     st.subheader("🗣️ Community Feedback NLP")
 
-    # Data entry form for new feedback
     with st.expander("➕ Add Feedback"):
-        with st.form("add_feedback_form"):
-            new_household_id = st.text_input("Household ID")
-            new_feedback = st.text_area("Feedback Text")
-            submitted = st.form_submit_button("Add Feedback")
-            if submitted and new_household_id and new_feedback:
-                new_row = {
-                    "household_id": new_household_id,
-                    "feedback_text": new_feedback
-                }
-                feedback_df.loc[len(feedback_df)] = new_row
-                st.success("Feedback added!")
+        with st.form("feedback_form"):
+            household_id = st.text_input("Household ID")
+            text = st.text_area("Feedback Text")
+            submitted = st.form_submit_button("Submit")
+            if submitted:
+                if household_id and text:
+                    db.insert_feedback(household_id, text)
+                    st.success("Feedback submitted.")
+                else:
+                    st.error("All fields required.")
 
-    feedback_df["sentiment"] = feedback_df["feedback_text"].apply(lambda x: sentiment_analyzer(x)[0]["label"])
-    st.dataframe(feedback_df)
-
-    text = " ".join(feedback_df["feedback_text"].tolist())
-    wordcloud = WordCloud(background_color='white', width=800, height=400).generate(text)
-
-    st.markdown("**Keyword Cloud**")
-    fig, ax = plt.subplots(figsize=(10, 4))
-    ax.imshow(wordcloud, interpolation='bilinear')
-    ax.axis("off")
-    st.pyplot(fig)
+    feedback_data = db.get_all_feedback()
+    if feedback_data:
+        df = pd.DataFrame(feedback_data, columns=["household_id", "feedback_text"])
+        df["sentiment"] = df["feedback_text"].apply(lambda x: sentiment_analyzer(x)[0]["label"])
+        st.dataframe(df)
+        words = " ".join(df["feedback_text"].tolist())
+        wordcloud = WordCloud(background_color="white").generate(words)
+        fig, ax = plt.subplots()
+        ax.imshow(wordcloud, interpolation="bilinear")
+        ax.axis("off")
+        st.pyplot(fig)
+    else:
+        st.info("No feedback yet.")
 
 # --- Infrastructure Monitor ---
 elif tab == "Infrastructure Monitor":
     st.subheader("⚙️ Infrastructure Status")
 
-    # Data entry form for new infrastructure status
     with st.expander("➕ Add Infrastructure Status"):
-        with st.form("add_infra_form"):
-            new_location = st.text_input("Location")
-            new_generator_ok = st.selectbox("Generator OK?", ["Yes", "No"])
-            new_pump_ok = st.selectbox("Pump OK?", ["Yes", "No"])
-            new_pipe_leak = st.selectbox("Pipe Leak?", ["No", "Yes"])
-            new_road_condition = st.selectbox("Road Condition", ["Good", "Muddy", "Flooded"])
-            new_comments = st.text_area("Comments")
-            new_water_available = st.number_input("Water Available (Liters)", min_value=0, max_value=1000, step=1)
-            submitted = st.form_submit_button("Add Status")
-            if submitted and new_location:
-                new_row = {
-                    "location": new_location,
-                    "generator_ok": new_generator_ok,
-                    "pump_ok": new_pump_ok,
-                    "pipe_leak": new_pipe_leak,
-                    "road_condition": new_road_condition,
-                    "comments": new_comments,
-                    "water_available_liters": new_water_available
-                }
-                infra_df.loc[len(infra_df)] = new_row
-                st.success("Infrastructure status added!")
+        with st.form("infra_form"):
+            location = st.text_input("Location")
+            generator_ok = st.selectbox("Generator OK?", ["Yes", "No"])
+            pump_ok = st.selectbox("Pump OK?", ["Yes", "No"])
+            pipe_leak = st.selectbox("Pipe Leak?", ["No", "Yes"])
+            road_condition = st.selectbox("Road Condition", ["Good", "Muddy", "Flooded"])
+            comments = st.text_area("Comments")
+            water_liters = st.number_input("Water Available (Liters)", 0, 1000)
+            submitted = st.form_submit_button("Submit")
+            if submitted:
+                if location:
+                    db.insert_infrastructure(location, generator_ok, pump_ok, pipe_leak, road_condition, comments, water_liters)
+                    st.success("Status submitted.")
+                else:
+                    st.error("Location required.")
 
-                # Check for alert condition and send SMS if needed
-                def check_flag(row):
-                    flags = []
-                    if row["generator_ok"] == "No":
-                        flags.append("🛑 Generator Failure")
-                    if row["pump_ok"] == "No":
-                        flags.append("🛑 Pump Fault")
-                    if row["pipe_leak"] == "Yes":
-                        flags.append("💧 Pipe Leak")
-                    if row["road_condition"] in ["Flooded", "Muddy"] and row["generator_ok"] == "Yes":
-                        flags.append("🚫 Fuel Delivery Blocked")
-                    return ", ".join(flags) if flags else "✅ OK"
+    infra_data = db.get_all_infrastructure()
+    if infra_data:
+        df = pd.DataFrame(infra_data, columns=["location", "generator_ok", "pump_ok", "pipe_leak", "road_condition", "comments", "water_available_liters"])
+        def flag(row):
+            issues = []
+            if row["generator_ok"] == "No":
+                issues.append("🛑 Generator")
+            if row["pump_ok"] == "No":
+                issues.append("🛑 Pump")
+            if row["pipe_leak"] == "Yes":
+                issues.append("💧 Leak")
+            if row["road_condition"] in ["Muddy", "Flooded"] and row["generator_ok"] == "Yes":
+                issues.append("🚫 Fuel Delivery Blocked")
+            return ", ".join(issues) if issues else "✅ OK"
+        df["status"] = df.apply(flag, axis=1)
+        st.dataframe(df)
 
-                status = check_flag(new_row)
-                if status != "✅ OK" or new_water_available < 10:
-                    subject = f"WASH Alert: {new_location} – {status}"
-                    body = f"Issue detected in {new_location} with status: {status}\nComments: {new_comments}\nWater Available: {new_water_available}L\nRoad Condition: {new_road_condition}"
-                    send_alert_email(subject, body)
-                    send_sms_alert(body)
-                    st.warning("🚨 Alert sent via Email and SMS!")
-
-    def check_flag(row):
-        flags = []
-        if row["generator_ok"] == "No":
-            flags.append("🛑 Generator Failure")
-        if row["pump_ok"] == "No":
-            flags.append("🛑 Pump Fault")
-        if row["pipe_leak"] == "Yes":
-            flags.append("💧 Pipe Leak")
-        if row["road_condition"] in ["Flooded", "Muddy"] and row["generator_ok"] == "Yes":
-            flags.append("🚫 Fuel Delivery Blocked")
-        return ", ".join(flags) if flags else "✅ OK"
-
-    infra_df["status"] = infra_df.apply(check_flag, axis=1)
-    st.dataframe(infra_df)
-
-    alerts = infra_df[infra_df["status"] != "✅ OK"]
-    if not alerts.empty:
-        st.warning("🚨 **Infrastructure Alerts**")
-        for i, row in alerts.iterrows():
-            st.write(f"🔧 **{row['location']}** – {row['status']}")
-            subject = f"WASH Alert: {row['location']} – {row['status']}"
-            body = f"Issue detected in {row['location']} with status: {row['status']}\nComments: {row['comments']}\nWater Available: {row['water_available_liters']}L\nRoad Condition: {row['road_condition']}"
-            send_alert_email(subject, body)
-            send_sms_alert(body)
-
-        st.markdown("---")
-        st.markdown("**🔄 Maintenance Task Log (Mock)**")
-        st.dataframe(alerts[["location", "status", "comments", "water_available_liters", "road_condition"]])
-
-        st.markdown("**💡 Link to Risk Prediction**")
-        st.markdown("Risk Score (Prototype): Zones with < 10L, active faults, or fuel blockage are High Risk")
-        high_risk = alerts[alerts["water_available_liters"] < 10]
-        st.dataframe(high_risk[["location", "water_available_liters", "status"]])
+        # Send alerts for issues
+        alerted_locations = set()
+        for _, row in df[df["status"] != "✅ OK"].iterrows():
+            # Avoid duplicate alerts for the same location in one run
+            if row['location'] not in alerted_locations:
+                subject = f"WASH Alert: {row['location']} – {row['status']}"
+                body = (
+                    f"Issue at {row['location']}: {row['status']}\n"
+                    f"{row['comments']}\n"
+                    f"Water: {row['water_available_liters']}L\n"
+                    f"Road: {row['road_condition']}"
+                )
+                send_alert_email(subject, body)
+                send_sms_alert(body)
+                alerted_locations.add(row['location'])
+    else:
+        st.info("No infrastructure data yet.")
 
 st.markdown("---")
-st.caption("Prototype v1.1 | Developed by George Arogo")
+st.caption("Prototype v1.2 | Developed by George Arogo")   
