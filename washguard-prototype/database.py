@@ -109,4 +109,39 @@ def get_all_infrastructure():
     conn.close()
     return rows
 
-# Optionally, add insert functions if needed by your app
+def insert_feedback(household_id, feedback_text):
+    conn = sqlite3.connect("washguard.db")
+    cursor = conn.cursor()
+    cursor.execute("INSERT INTO feedback (household_id, feedback_text) VALUES (?, ?)", (household_id, feedback_text))
+    conn.commit()
+    conn.close()
+
+def insert_chlorine(tap_stand_id, date, time, chlorine_level):
+    conn = sqlite3.connect("washguard.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO chlorine (tap_stand_id, date, time, chlorine_level) VALUES (?, ?, ?, ?)",
+        (tap_stand_id, date, time, chlorine_level)
+    )
+    conn.commit()
+    conn.close()
+
+def insert_quality(source_id, turbidity, odour_present):
+    conn = sqlite3.connect("washguard.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO quality (source_id, turbidity, odour_present) VALUES (?, ?, ?)",
+        (source_id, turbidity, odour_present)
+    )
+    conn.commit()
+    conn.close()
+
+def insert_infrastructure(location, generator_ok, pump_ok, pipe_leak, road_condition, comments, water_available_liters):
+    conn = sqlite3.connect("washguard.db")
+    cursor = conn.cursor()
+    cursor.execute(
+        "INSERT INTO infrastructure (location, generator_ok, pump_ok, pipe_leak, road_condition, comments, water_available_liters) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (location, generator_ok, pump_ok, pipe_leak, road_condition, comments, water_available_liters)
+    )
+    conn.commit()
+    conn.close()
