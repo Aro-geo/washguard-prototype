@@ -209,8 +209,9 @@ elif tab == "Infrastructure Monitor":
             st.markdown("**🔄 Maintenance Task Log (Mock)**")
             st.dataframe(alerts[["location", "status", "comments", "water_available_liters", "road_condition"]])
 
-            st.markdown("**💡 Link to Risk Prediction**")
-            st.markdown("Risk Score (Prototype): Zones with < 10L, active faults, or fuel blockage are High Risk")
+            # --- Risk Score ---
+            st.markdown("**💡 Risk Prediction**")
+            st.markdown("Zones with < 10L, active faults, or fuel blockage are High Risk")
             high_risk = alerts[alerts["water_available_liters"] < 10]
             if not high_risk.empty:
                 st.dataframe(high_risk[["location", "water_available_liters", "status"]])
