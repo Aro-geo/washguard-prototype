@@ -104,3 +104,42 @@ if isinstance(infra_data, list) and infra_data:
         st.dataframe(pd.DataFrame(infra_alerts))
     else:
         st.success("✅ No Current Infrastructure Alerts")
+
+# --- Infrastructure Monitor ---
+infra_df = pd.DataFrame(infra_data)
+if not infra_df.empty:
+    st.subheader("⚙️ Infrastructure Status")
+
+    def check_flag(row):
+        flags = []
+        if row["generator_ok"] == "No":
+            flags.append("🛑 Generator Failure")
+        if row["pump_ok"] == "No":
+            flags.append("🛑 Pump Fault")
+        if row["pipe_leak"] == "Yes":
+            flags.append("💧 Pipe Leak")
+        if row["road_condition"] in ["Flooded", "Muddy"] and row["generator_ok"] == "Yes":
+            flags.append("🚫 Fuel Delivery Blocked")
+        return ", ".join(flags) if flags else "✅ OK"
+
+    infra_df["status"] = infra_df.apply(check_flag, axis=1)
+    st.dataframe(infra_df)
+
+    alerts = infra_df[infra_df["status"] != "✅ OK"]
+    if not alerts.empty:
+        st.warning("🚨 **Infrastructure Alerts**")
+        for i, row in alerts.iterrows():
+            st.write(f"🔧 **{row['location']}** – {row['status']}")
+            subject = f"WASH Alert: {row['location']} – {row['status']}"
+            body = f"Issue detected in {row['location']} with status: {row['status']}\nComments: {row['comments']}\nWater Available: {row['water_available_liters']}L\nRoad Condition: {row['road_condition']}"
+            send_alert_email(subject, body)
+            send_sms_alert(body)
+
+        st.markdown("---")
+        st.markdown("**🔄 Maintenance Task Log (Mock)**")
+        st.dataframe(alerts[["location", "status", "comments", "water_available_liters", "road_condition"]])
+
+        st.markdown("**💡 Link to Risk Prediction**")
+        st.markdown("Risk Score (Prototype): Zones with < 10L, active faults, or fuel blockage are High Risk")
+        high_risk = alerts[alerts["water_available_liters"] < 10]
+        st.dataframe(high_risk[["location", "water_available_liters", "status"]])
