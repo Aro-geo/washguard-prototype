@@ -15,8 +15,8 @@ import database as db
 sentiment_analyzer = pipeline("sentiment-analysis")
 
 # Page config
-st.set_page_config(page_title="WASHGuard AI Dashboard", layout="wide")
-st.title("🚰 WASHGuard AI Dashboard")
+st.set_page_config(page_title="WASHGuard AI ", layout="wide")
+st.title("🚰 WASHGuard AI ")
 
 # Sidebar navigation
 tab = st.sidebar.radio("Select Module", [
