@@ -5,6 +5,8 @@ from database import (
     insert_feedback, get_all_feedback,
     insert_infrastructure, get_all_infrastructure
 )
+from notifications import send_alert_email, send_sms_alert
+import pandas as pd
 
 st.set_page_config(page_title="Water Monitoring System", layout="wide")
 
@@ -60,4 +62,45 @@ with st.form("infra_form"):
         st.success("Infrastructure data submitted.")
 
 st.subheader("All Infrastructure Entries")
-st.table(get_all_infrastructure())
+infra_data = get_all_infrastructure()
+st.table(infra_data)
+
+# --- Alerts ---
+st.subheader("Infrastructure Alerts")
+def check_infra_alerts(entry):
+    alerts = []
+    if entry['generator_ok'] == 'No':
+        alerts.append("🛑 Generator Failure")
+    if entry['pump_ok'] == 'No':
+        alerts.append("🛑 Pump Fault")
+    if entry['pipe_leak'] == 'Yes':
+        alerts.append("💧 Pipe Leak")
+    if entry['road_condition'] in ["Flooded", "Muddy", "Blocked"] and entry['generator_ok'] == 'Yes':
+        alerts.append("🚫 Fuel Delivery Blocked")
+    if entry['water_available_liters'] < 10:
+        alerts.append("❗ Low Water Reserves")
+    return ", ".join(alerts) if alerts else "✅ OK"
+
+if isinstance(infra_data, list) and infra_data:
+    infra_alerts = []
+    for entry in infra_data:
+        alert = check_infra_alerts(entry)
+        if alert != "✅ OK":
+            infra_alerts.append({**entry, "alerts": alert})
+
+            subject = f"WASH Alert: {entry['location']} – {alert}"
+            body = (
+                f"Issue detected in {entry['location']}:\n\n"
+                f"Alerts: {alert}\n"
+                f"Comments: {entry['comments']}\n"
+                f"Water Available: {entry['water_available_liters']}L\n"
+                f"Road Condition: {entry['road_condition']}"
+            )
+            send_alert_email(subject, body)
+            send_sms_alert(body)
+
+    if infra_alerts:
+        st.warning("🚨 Issues Detected in the Following Locations")
+        st.dataframe(pd.DataFrame(infra_alerts))
+    else:
+        st.success("✅ No Current Infrastructure Alerts")
