@@ -272,3 +272,123 @@ else:
 
 st.markdown("---")
 st.caption("Prototype v1.2 | Developed by George Arogo")
+
+# --- Water Quality Analysis ---
+st.header("Water Quality Analysis")
+water_data = db.get_all_quality()
+if water_data:
+    quality_df = pd.DataFrame(water_data, columns=["Source ID", "Turbidity (NTU)", "Odour Present"])
+
+    def turbidity_flag(value):
+        return "High" if value > 5 else "Normal"
+
+    def recommend_treatment(row):
+        if row["Turbidity (NTU)"] > 5 or row["Odour Present"].lower() == "yes":
+            return "PUR"
+        else:
+            return "Aqua Tabs"
+
+    quality_df["Turbidity Level"] = quality_df["Turbidity (NTU)"].apply(turbidity_flag)
+    quality_df["Recommended Treatment"] = quality_df.apply(recommend_treatment, axis=1)
+
+    def format_label(label):
+        if label == "High":
+            return f'<span style="color:white;background-color:red;padding:3px 8px;border-radius:10px">{label}</span>'
+        elif label == "Normal":
+            return f'<span style="color:black;background-color:#e0e0e0;padding:3px 8px;border-radius:10px">{label}</span>'
+        elif label == "PUR":
+            return f'<span style="color:white;background-color:orange;padding:3px 8px;border-radius:10px">{label}</span>'
+        elif label == "Aqua Tabs":
+            return f'<span style="color:white;background-color:blue;padding:3px 8px;border-radius:10px">{label}</span>'
+        elif label == "Yes":
+            return f'<span style="color:red">{label}</span>'
+        elif label == "No":
+            return f'<span style="color:green">{label}</span>'
+        else:
+            return label
+
+    quality_df_html = quality_df.copy()
+    quality_df_html["Turbidity (NTU)"] = quality_df_html["Turbidity (NTU)"].astype(str)
+    quality_df_html["Turbidity Level"] = quality_df_html["Turbidity Level"].apply(format_label)
+    quality_df_html["Odour Present"] = quality_df_html["Odour Present"].apply(format_label)
+    quality_df_html["Recommended Treatment"] = quality_df_html["Recommended Treatment"].apply(format_label)
+
+    st.markdown("""
+    <div style='background-color:white;padding:20px;border-radius:10px'>
+        <h4 style='margin-bottom:5px'>Water Quality Analysis</h4>
+        <p style='color:#6c757d;margin-top:0'>Latest water quality samples from source locations</p>
+    </div>
+    """, unsafe_allow_html=True)
+
+    st.markdown(quality_df_html.to_html(escape=False, index=False), unsafe_allow_html=True)
+else:
+    st.info("No water quality data available.")
+
+# --- Sentiment and Feedback ---
+col1, col2 = st.columns([1, 2])
+with col1:
+    st.header("Sentiment Analysis")
+    feedback_data = db.get_all_feedback()
+    if feedback_data:
+        feedback_df = pd.DataFrame(feedback_data, columns=["Household ID", "Feedback"])
+        feedback_df["Sentiment"] = feedback_df["Feedback"].apply(lambda x: "NEGATIVE" if "no" in x.lower() or "bad" in x.lower() else "POSITIVE")
+        pos = (feedback_df["Sentiment"] == "POSITIVE").sum()
+        neg = (feedback_df["Sentiment"] == "NEGATIVE").sum()
+        st.markdown(f"""
+            <div style='text-align:center'>
+                <p style='color:red;font-size:24px'>NEGATIVE {int(neg/(pos+neg)*100)}%</p>
+                <p style='color:green;font-size:24px'>POSITIVE {int(pos/(pos+neg)*100)}%</p>
+            </div>
+        """, unsafe_allow_html=True)
+    else:
+        st.info("No feedback data available.")
+
+with col2:
+    st.header("Community Feedback")
+    if feedback_data:
+        feedback_df["Sentiment"] = feedback_df["Sentiment"].apply(lambda s: f'<span style="color:white;background-color:{"red" if s=="NEGATIVE" else "green"};padding:3px 8px;border-radius:10px">{s}</span>')
+        st.markdown(feedback_df.to_html(escape=False, index=False), unsafe_allow_html=True)
+    else:
+        st.info("No feedback data available.")
+
+# --- Infrastructure Alerts ---
+st.header("Infrastructure Alerts")
+infra_data = db.get_all_infrastructure()
+if isinstance(infra_data, list) and infra_data:
+    def check_infra_alerts(entry):
+        alerts = []
+        if entry['generator_ok'] == 'No':
+            alerts.append("🛑 Generator Failure")
+        if entry['pump_ok'] == 'No':
+            alerts.append("🛑 Pump Fault")
+        if entry['pipe_leak'] == 'Yes':
+            alerts.append("💧 Pipe Leak")
+        if entry['road_condition'] in ["Flooded", "Muddy", "Blocked"] and entry['generator_ok'] == 'Yes':
+            alerts.append("🚫 Fuel Delivery Blocked")
+        if entry['water_available_liters'] < 10:
+            alerts.append("❗ Low Water Reserves")
+        return ", ".join(alerts) if alerts else "✅ OK"
+
+    infra_alerts = []
+    for entry in infra_data:
+        alert = check_infra_alerts(entry)
+        if alert != "✅ OK":
+            infra_alerts.append({**entry, "Status": alert})
+            subject = f"WASH Alert: {entry['location']} – {alert}"
+            body = (
+                f"Issue detected in {entry['location']}\n\n"
+                f"Alerts: {alert}\n"
+                f"Comments: {entry['comments']}\n"
+                f"Water Available: {entry['water_available_liters']}L\n"
+                f"Road Condition: {entry['road_condition']}"
+            )
+            send_alert_email(subject, body)
+            send_sms_alert(body)
+
+    if infra_alerts:
+        df_alert = pd.DataFrame(infra_alerts)
+        st.dataframe(df_alert[["location", "Status", "comments", "water_available_liters", "road_condition"]])
+    else:
+        st.success("✅ No current infrastructure alerts")
+else:
+    st.info("No infrastructure data available.")
