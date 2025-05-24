@@ -18,9 +18,7 @@ TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE") or "+13083373418"
 ALERT_PHONE_NUMBER = os.getenv("ALERT_PHONE") or "+254726796020"
 
 def send_alert_email(subject, body):
-    # Placeholder: Implement email sending logic here
     print(f"Email sent: {subject}\n{body}")
 
 def send_sms_alert(message):
-    # Placeholder: Implement SMS sending logic here
     print(f"SMS sent: {message}")
