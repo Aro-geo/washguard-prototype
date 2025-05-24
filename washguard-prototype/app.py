@@ -18,45 +18,70 @@ sentiment_analyzer = pipeline("sentiment-analysis")
 st.set_page_config(page_title="WASHGuard AI ", layout="wide")
 st.title("🚰 WASHGuard AI")
 
-# Sidebar navigation
+# Sidebar navigation (replace your current tab definition)
 tab = st.sidebar.radio("Select Module", [
+    "Dashboard",
     "Water Treatment",
     "Feedback Analysis",
     "Infrastructure Monitor"
 ])
 
-# Alert Functions
-def send_alert_email(subject, body):
-    sender_email = "your_email@gmail.com"
-    receiver_email = "geokullo@gmail.com"
-    password = os.getenv("EMAIL_PASSWORD")
-    msg = MIMEText(body)
-    msg["Subject"] = subject
-    msg["From"] = sender_email
-    msg["To"] = receiver_email
-    try:
-        server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
-        server.login(sender_email, password)
-        server.sendmail(sender_email, receiver_email, msg.as_string())
-        server.quit()
-    except Exception as e:
-        print("❌ Email failed:", e)
+# --- Dashboard Tab ---
+if tab == "Dashboard":
+    import altair as alt
+    from database import (
+        insert_chlorine, get_all_chlorine,
+        insert_quality, get_all_quality,
+        insert_feedback, get_all_feedback,
+        insert_infrastructure, get_all_infrastructure
+    )
+    from notifications import send_alert_email, send_sms_alert
 
-def send_sms_alert(body):
-    account_sid = os.getenv("TWILIO_SID", "AC90d1d2449012ddc5cb27ac9b4a52385d")
-    auth_token = os.getenv("TWILIO_AUTH_TOKEN")
-    from_number = os.getenv("TWILIO_PHONE", "+13083373418")
-    to_number = os.getenv("ALERT_PHONE", "+254726796020")
+    st.title("📊 WASHGuard AI Dashboard")
+    st.markdown("Last updated: " + pd.Timestamp.now().strftime("%m/%d/%Y, %I:%M:%S %p"))
 
-    try:
-        client = Client(account_sid, auth_token)
-        client.messages.create(
-            body=body,
-            from_=from_number,
-            to=to_number
-        )
-    except Exception as e:
-        print("❌ SMS failed:", e)
+    chlorine_data = get_all_chlorine()
+    chlorine_df = pd.DataFrame(chlorine_data, columns=["tap_stand_id", "date", "time", "chlorine_level"])
+    low_chlorine = chlorine_df[chlorine_df["chlorine_level"] < 0.2] if not chlorine_df.empty else pd.DataFrame()
+
+    feedback_data = get_all_feedback()
+    feedback_df = pd.DataFrame(feedback_data, columns=["household_id", "feedback_text"])
+    negative_feedback = feedback_df[feedback_df["feedback_text"].str.contains("bad|dirty|no water", case=False, na=False)] if not feedback_df.empty else pd.DataFrame()
+
+    col1, col2, col3, col4 = st.columns(4)
+    col1.metric("Chlorine Alerts", f"{len(low_chlorine)} of {len(chlorine_df)}", help="Tap stands with low chlorine levels")
+    col2.metric("Turbidity Issues", "3 of 5", help="Placeholder - Turbidity data pending")
+    col3.metric("Community Feedback", f"{len(negative_feedback)} negative", help="Feedback from households")
+    col4.metric("Overall Risk Score", "High (100%)", help="Based on all system indicators")
+
+    # --- Chlorine Chart ---
+    st.markdown("### Chlorine Level Monitoring")
+    if not chlorine_df.empty:
+        chlorine_df["datetime"] = pd.to_datetime(chlorine_df["date"] + " " + chlorine_df["time"])
+        chart = alt.Chart(chlorine_df).mark_line(point=True).encode(
+            x="datetime:T",
+            y="chlorine_level:Q"
+        ).properties(title="Chlorine Level Monitoring")
+        st.altair_chart(chart, use_container_width=True)
+    else:
+        st.info("No chlorine data available.")
+
+    # --- Alert Composer ---
+    st.markdown("### 🔔 Alert System")
+    alert_subject = st.text_input("Alert Subject", "WASH Alert: Critical Infrastructure Issue")
+    alert_msg = st.text_area("Alert Message", "Describe the issue and required actions...")
+    send_email = st.toggle("Email", value=True)
+    send_sms = st.toggle("SMS", value=True)
+
+    if st.button("Send Alert"):
+        if send_email:
+            send_alert_email(alert_subject, alert_msg)
+        if send_sms:
+            send_sms_alert(alert_msg)
+        st.success("Alert sent successfully!")
+
+    st.markdown("---")
+    st.caption("Prototype v1.2 | Developed by George Arogo")
 
 # --- Water Treatment ---
 if tab == "Water Treatment":
