@@ -18,59 +18,48 @@ sentiment_analyzer = pipeline("sentiment-analysis")
 st.set_page_config(page_title="WASHGuard AI ", layout="wide")
 st.title("🚰 WASHGuard AI")
 
-# Sidebar navigation (replace your current tab definition)
+# Sidebar navigation
 tab = st.sidebar.radio("Select Module", [
-    "Dashboard",
     "Water Treatment",
     "Feedback Analysis",
     "Infrastructure Monitor"
 ])
 
-# --- Dashboard Tab ---
-if tab == "Dashboard":
-    import altair as alt
-    from database import (
-        insert_chlorine, get_all_chlorine,
-        insert_quality, get_all_quality,
-        insert_feedback, get_all_feedback,
-        insert_infrastructure, get_all_infrastructure
-    )
-    from notification import send_alert_email, send_sms_alert
+# Alert Functions
+def send_alert_email(subject, body):
+    sender_email = "your_email@gmail.com"
+    receiver_email = "geokullo@gmail.com"
+    password = os.getenv("EMAIL_PASSWORD")
+    msg = MIMEText(body)
+    msg["Subject"] = subject
+    msg["From"] = sender_email
+    msg["To"] = receiver_email
+    try:
+        server = smtplib.SMTP_SSL("smtp.gmail.com", 465)
+        server.login(sender_email, password)
+        server.sendmail(sender_email, receiver_email, msg.as_string())
+        server.quit()
+    except Exception as e:
+        print("❌ Email failed:", e)
 
-    st.title("📊 WASHGuard AI Dashboard")
-    st.markdown("Last updated: " + pd.Timestamp.now().strftime("%m/%d/%Y, %I:%M:%S %p"))
+def send_sms_alert(body):
+    account_sid = os.getenv("TWILIO_SID", "AC90d1d2449012ddc5cb27ac9b4a52385d")
+    auth_token = os.getenv("TWILIO_AUTH_TOKEN")
+    from_number = os.getenv("TWILIO_PHONE", "+13083373418")
+    to_number = os.getenv("ALERT_PHONE", "+254726796020")
 
-    chlorine_data = get_all_chlorine()
-    chlorine_df = pd.DataFrame(chlorine_data, columns=["tap_stand_id", "date", "time", "chlorine_level"])
-    low_chlorine = chlorine_df[chlorine_df["chlorine_level"] < 0.2] if not chlorine_df.empty else pd.DataFrame()
-
-    feedback_data = get_all_feedback()
-    feedback_df = pd.DataFrame(feedback_data, columns=["household_id", "feedback_text"])
-    negative_feedback = feedback_df[feedback_df["feedback_text"].str.contains("bad|dirty|no water", case=False, na=False)] if not feedback_df.empty else pd.DataFrame()
-
-    col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Chlorine Alerts", f"{len(low_chlorine)} of {len(chlorine_df)}", help="Tap stands with low chlorine levels")
-    col2.metric("Turbidity Issues", "3 of 5", help="Placeholder - Turbidity data pending")
-    col3.metric("Community Feedback", f"{len(negative_feedback)} negative", help="Feedback from households")
-    col4.metric("Overall Risk Score", "High (100%)", help="Based on all system indicators")
-
- # --- Alert Composer ---
-    st.markdown("### 🔔 Alert System")
-    alert_subject = st.text_input("Alert Subject", "WASH Alert: Critical Infrastructure Issue")
-    alert_msg = st.text_area("Alert Message", "Describe the issue and required actions...")
-    send_email = st.toggle("Email", value=True)
-    send_sms = st.toggle("SMS", value=True)
-
-    if st.button("Send Alert"):
-        if send_email:
-            send_alert_email(alert_subject, alert_msg)
-        if send_sms:
-            send_sms_alert(alert_msg)
-        st.success("Alert sent successfully!")
+    try:
+        client = Client(account_sid, auth_token)
+        client.messages.create(
+            body=body,
+            from_=from_number,
+            to=to_number
+        )
+    except Exception as e:
+        print("❌ SMS failed:", e)
 
 # --- Water Treatment ---
 if tab == "Water Treatment":
-    st.header("Water Treatment Data")
     st.subheader("💧 Water Treatment Recommendations")
 
     # Chlorine Level
@@ -91,8 +80,9 @@ if tab == "Water Treatment":
 
     chlorine_data = db.get_all_chlorine()
     if chlorine_data:
-        st.subheader("All Chlorine Entries")
-        st.table(chlorine_data)
+        df = pd.DataFrame(chlorine_data, columns=["tap_stand_id", "date", "time", "chlorine_level"])
+        df["status"] = df["chlorine_level"].apply(lambda x: "🔴 Low" if x < 0.2 else "🔴 High" if x > 0.5 else "✅ OK")
+        st.dataframe(df)
     else:
         st.info("No chlorine readings yet.")
 
@@ -121,7 +111,6 @@ if tab == "Water Treatment":
 
 # --- Feedback Analysis ---
 elif tab == "Feedback Analysis":
-    st.header("💬 Community Feedback")
     st.subheader("🗣️ Community Feedback NLP")
 
     with st.expander("➕ Add Feedback"):
@@ -147,16 +136,11 @@ elif tab == "Feedback Analysis":
         ax.imshow(wordcloud, interpolation="bilinear")
         ax.axis("off")
         st.pyplot(fig)
-
-        # ADDITIONAL: Show all feedback as a table
-        st.subheader("🗂️ All Feedback")
-        st.table(feedback_data)
     else:
         st.info("No feedback yet.")
 
 # --- Infrastructure Monitor ---
 elif tab == "Infrastructure Monitor":
-    st.header("🛠️ Infrastructure Monitoring")
     st.subheader("⚙️ Infrastructure Status")
 
     with st.expander("➕ Add Infrastructure Status"):
@@ -178,94 +162,52 @@ elif tab == "Infrastructure Monitor":
 
     infra_data = db.get_all_infrastructure()
     if infra_data:
-        st.subheader("All Infrastructure Entries")
-        st.table(infra_data)
-
-        infra_df = pd.DataFrame(
-            infra_data,
-            columns=[
-                "location", "generator_ok", "pump_ok", "pipe_leak",
-                "road_condition", "comments", "water_available_liters"
-            ]
-        )
-
-        def check_flag(row):
-            flags = []
+        df = pd.DataFrame(infra_data, columns=["location", "generator_ok", "pump_ok", "pipe_leak", "road_condition", "comments", "water_available_liters"])
+        def flag(row):
+            issues = []
             if row["generator_ok"] == "No":
-                flags.append("🛑 Generator Failure")
+                issues.append("🛑 Generator")
             if row["pump_ok"] == "No":
-                flags.append("🛑 Pump Fault")
+                issues.append("🛑 Pump")
             if row["pipe_leak"] == "Yes":
-                flags.append("💧 Pipe Leak")
-            if row["road_condition"] in ["Flooded", "Muddy"] and row["generator_ok"] == "Yes":
-                flags.append("🚫 Fuel Delivery Blocked")
+                issues.append("💧 Leak")
+            if row["road_condition"] in ["Muddy", "Flooded"] and row["generator_ok"] == "Yes":
+                issues.append("🚫 Fuel Delivery Blocked")
             if row["water_available_liters"] < 10:
-                flags.append("❗ Low Water Reserves")
-            return ", ".join(flags) if flags else "✅ OK"
+                issues.append("❗ Low Water Reserves")
+            return ", ".join(issues) if issues else "✅ OK"
+        df["status"] = df.apply(flag, axis=1)
+        st.dataframe(df)
 
-        infra_df["status"] = infra_df.apply(check_flag, axis=1)
-        st.dataframe(
-    infra_df.style.applymap(
-        lambda v: 'background-color: #ffcccc' if '🛑' in v or '💧' in v or '❗' in v else 'background-color: #ccffcc',
-        subset=['status']
-    )
-)
+        # --- Alerts Table ---
+        alerts_df = df[df["status"] != "✅ OK"]
+        if not alerts_df.empty:
+            st.warning("🚨 Issues Detected in the Following Locations")
+            st.dataframe(alerts_df[["location", "status", "comments", "water_available_liters", "road_condition"]])
 
-        st.subheader("Infrastructure Alerts")
+            # --- Risk Score ---
+            st.markdown("**💡 Risk Prediction**")
+            st.markdown("Zones with < 10L, active faults, or fuel blockage are High Risk")
+            high_risk = alerts_df[alerts_df["water_available_liters"] < 10]
+            if not high_risk.empty:
+                st.dataframe(high_risk[["location", "water_available_liters", "status"]])
 
-def check_infra_alerts(entry):
-    alerts = []
-    if entry['generator_ok'] == 'No':
-        alerts.append("🛑 Generator Failure")
-    if entry['pump_ok'] == 'No':
-        alerts.append("🛑 Pump Fault")
-    if entry['pipe_leak'] == 'Yes':
-        alerts.append("💧 Pipe Leak")
-    if entry['road_condition'] in ["Flooded", "Muddy", "Blocked"] and entry['generator_ok'] == 'Yes':
-        alerts.append("🚫 Fuel Delivery Blocked")
-    if entry['water_available_liters'] < 10:
-        alerts.append("❗ Low Water Reserves")
-    return ", ".join(alerts) if alerts else "✅ OK"
-
-if infra_data is not None and len(infra_data) > 0:
-    # Convert to list of dicts if needed
-    if isinstance(infra_data, pd.DataFrame):
-        records = infra_data.to_dict(orient="records")
-    elif isinstance(infra_data, list):
-        # If it's a list of tuples, convert to dicts
-        if infra_data and not isinstance(infra_data[0], dict):
-            columns = ["location", "generator_ok", "pump_ok", "pipe_leak", "road_condition", "comments", "water_available_liters"]
-            records = [dict(zip(columns, row)) for row in infra_data]
-        else:
-            records = infra_data
+        # --- Send Alerts (avoid duplicates) ---
+        alerted_locations = set()
+        for _, row in alerts_df.iterrows():
+            if row['location'] not in alerted_locations:
+                subject = f"WASH Alert: {row['location']} – {row['status']}"
+                body = (
+                    f"Issue at {row['location']}: {row['status']}\n"
+                    f"{row['comments']}\n"
+                    f"Water: {row['water_available_liters']}L\n"
+                    f"Road: {row['road_condition']}"
+                )
+                send_alert_email(subject, body)
+                send_sms_alert(body)
+                alerted_locations.add(row['location'])
     else:
-        records = []
+        st.info("No infrastructure data yet.")
 
-    infra_alerts = []
-    for entry in records:
-        alert = check_infra_alerts(entry)
-        if alert != "✅ OK":
-            infra_alerts.append({**entry, "alerts": alert})
-
-            subject = f"WASH Alert: {entry['location']} – {alert}"
-            body = (
-                f"Issue detected in {entry['location']}:\n\n"
-                f"Alerts: {alert}\n"
-                f"Comments: {entry['comments']}\n"
-                f"Water Available: {entry['water_available_liters']}L\n"
-                f"Road Condition: {entry['road_condition']}"
-            )
-            send_alert_email(subject, body)
-            send_sms_alert(body)
-
-    if infra_alerts:
-        st.warning("🚨 Issues Detected in the Following Locations")
-        st.dataframe(pd.DataFrame(infra_alerts))
-    else:
-        st.success("✅ No Current Infrastructure Alerts")
-else:
-    st.info("No infrastructure data available yet.")
-
-if "Dashboard" in tab or "Water Treatment" in tab or "Feedback Analysis" in tab or "Infrastructure Monitor" in tab:
-    st.markdown("---")
-    st.caption("Prototype v1.2 | Developed by George Arogo")
+st.markdown("---")
+st.caption("Prototype v1.2 | Developed by George Arogo")
