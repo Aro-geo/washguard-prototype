@@ -68,9 +68,6 @@ if tab == "Dashboard":
             send_sms_alert(alert_msg)
         st.success("Alert sent successfully!")
 
-    st.markdown("---")
-    st.caption("Prototype v1.2 | Developed by George Arogo")
-
 # --- Water Treatment ---
 if tab == "Water Treatment":
     st.subheader("💧 Water Treatment Recommendations")
