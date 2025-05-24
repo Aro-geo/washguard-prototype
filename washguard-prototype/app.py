@@ -230,15 +230,22 @@ def check_infra_alerts(entry):
         alerts.append("❗ Low Water Reserves")
     return ", ".join(alerts) if alerts else "✅ OK"
 
-if isinstance(infra_data, list) and infra_data:
+if infra_data is not None and len(infra_data) > 0:
+    # Convert to list of dicts if needed
+    if isinstance(infra_data, pd.DataFrame):
+        records = infra_data.to_dict(orient="records")
+    elif isinstance(infra_data, list):
+        # If it's a list of tuples, convert to dicts
+        if infra_data and not isinstance(infra_data[0], dict):
+            columns = ["location", "generator_ok", "pump_ok", "pipe_leak", "road_condition", "comments", "water_available_liters"]
+            records = [dict(zip(columns, row)) for row in infra_data]
+        else:
+            records = infra_data
+    else:
+        records = []
+
     infra_alerts = []
-    for entry in infra_data:
-        # Convert to dict if not already
-        if not isinstance(entry, dict):
-            entry = dict(zip(
-                ["location", "generator_ok", "pump_ok", "pipe_leak", "road_condition", "comments", "water_available_liters"],
-                entry
-            ))
+    for entry in records:
         alert = check_infra_alerts(entry)
         if alert != "✅ OK":
             infra_alerts.append({**entry, "alerts": alert})
@@ -259,6 +266,8 @@ if isinstance(infra_data, list) and infra_data:
         st.dataframe(pd.DataFrame(infra_alerts))
     else:
         st.success("✅ No Current Infrastructure Alerts")
+else:
+    st.info("No infrastructure data available yet.")
     
 
 st.markdown("---")
