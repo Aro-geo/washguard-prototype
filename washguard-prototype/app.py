@@ -35,7 +35,7 @@ if tab == "Dashboard":
         insert_feedback, get_all_feedback,
         insert_infrastructure, get_all_infrastructure
     )
-    from .notification import send_alert_email, send_sms_alert
+    from notification import send_alert_email, send_sms_alert
 
     st.title("📊 WASHGuard AI Dashboard")
     st.markdown("Last updated: " + pd.Timestamp.now().strftime("%m/%d/%Y, %I:%M:%S %p"))
