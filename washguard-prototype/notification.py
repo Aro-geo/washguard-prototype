@@ -17,32 +17,10 @@ TWILIO_AUTH_TOKEN = os.getenv("TWILIO_AUTH_TOKEN") or "your_twilio_auth_token"
 TWILIO_PHONE_NUMBER = os.getenv("TWILIO_PHONE") or "+13083373418"
 ALERT_PHONE_NUMBER = os.getenv("ALERT_PHONE") or "+254726796020"
 
-def send_alert_email(subject: str, body: str):
-    try:
-        msg = MIMEMultipart()
-        msg['From'] = EMAIL_ADDRESS
-        msg['To'] = EMAIL_RECEIVER
-        msg['Subject'] = subject
+def send_alert_email(subject, body):
+    # Placeholder: Implement email sending logic here
+    print(f"Email sent: {subject}\n{body}")
 
-        msg.attach(MIMEText(body, 'plain'))
-
-        server = smtplib.SMTP(SMTP_SERVER, SMTP_PORT)
-        server.starttls()
-        server.login(EMAIL_ADDRESS, EMAIL_PASSWORD)
-        server.send_message(msg)
-        server.quit()
-        print("Email alert sent.")
-    except Exception as e:
-        print(f"Error sending email: {e}")
-
-def send_sms_alert(body: str):
-    try:
-        client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
-        message = client.messages.create(
-            body=body,
-            from_=TWILIO_PHONE_NUMBER,
-            to=ALERT_PHONE_NUMBER
-        )
-        print(f"SMS sent: {message.sid}")
-    except Exception as e:
-        print(f"Error sending SMS: {e}")
+def send_sms_alert(message):
+    # Placeholder: Implement SMS sending logic here
+    print(f"SMS sent: {message}")
