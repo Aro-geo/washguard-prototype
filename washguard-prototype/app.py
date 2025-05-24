@@ -94,9 +94,8 @@ if tab == "Water Treatment":
 
     chlorine_data = db.get_all_chlorine()
     if chlorine_data:
-        df = pd.DataFrame(chlorine_data, columns=["tap_stand_id", "date", "time", "chlorine_level"])
-        df["status"] = df["chlorine_level"].apply(lambda x: "🔴 Low" if x < 0.2 else "🔴 High" if x > 0.5 else "✅ OK")
-        st.dataframe(df)
+        st.subheader("All Chlorine Entries")
+        st.table(chlorine_data)
     else:
         st.info("No chlorine readings yet.")
 
@@ -182,6 +181,9 @@ elif tab == "Infrastructure Monitor":
 
     infra_data = db.get_all_infrastructure()
     if infra_data:
+        st.subheader("All Infrastructure Entries")
+        st.table(infra_data)
+
         infra_df = pd.DataFrame(
             infra_data,
             columns=[
@@ -212,39 +214,52 @@ elif tab == "Infrastructure Monitor":
     )
 )
 
-        alerts = infra_df[infra_df["status"] != "✅ OK"]
-        if not alerts.empty:
-            st.header("📊 Infrastructure Alert Dashboard")
-            st.warning("🚨 **Infrastructure Alerts**")
-            alerted_locations = set()
-            for i, row in alerts.iterrows():
-                if row['location'] not in alerted_locations:
-                    st.write(f"🔧 **{row['location']}** – {row['status']}")
-                    subject = f"WASH Alert: {row['location']} – {row['status']}"
-                    body = (
-                        f"Issue detected in {row['location']} with status: {row['status']}\n"
-                        f"Comments: {row['comments']}\n"
-                        f"Water Available: {row['water_available_liters']}L\n"
-                        f"Road Condition: {row['road_condition']}"
-                    )
-                    send_alert_email(subject, body)
-                    send_sms_alert(body)
-                    alerted_locations.add(row['location'])
+        st.subheader("Infrastructure Alerts")
 
-            st.markdown("---")
-            st.markdown("**🔄 Maintenance Task Log (Mock)**")
-            st.dataframe(alerts[["location", "status", "comments", "water_available_liters", "road_condition"]])
+def check_infra_alerts(entry):
+    alerts = []
+    if entry['generator_ok'] == 'No':
+        alerts.append("🛑 Generator Failure")
+    if entry['pump_ok'] == 'No':
+        alerts.append("🛑 Pump Fault")
+    if entry['pipe_leak'] == 'Yes':
+        alerts.append("💧 Pipe Leak")
+    if entry['road_condition'] in ["Flooded", "Muddy", "Blocked"] and entry['generator_ok'] == 'Yes':
+        alerts.append("🚫 Fuel Delivery Blocked")
+    if entry['water_available_liters'] < 10:
+        alerts.append("❗ Low Water Reserves")
+    return ", ".join(alerts) if alerts else "✅ OK"
 
-            # --- Risk Score ---
-            st.markdown("**💡 Risk Prediction**")
-            st.markdown("Zones with < 10L, active faults, or fuel blockage are High Risk")
-            high_risk = alerts[alerts["water_available_liters"] < 100]
-            if not high_risk.empty:
-                st.dataframe(high_risk[["location", "water_available_liters", "status"]])
-        else:
-            st.success("✅ No Current Infrastructure Alerts")
+if isinstance(infra_data, list) and infra_data:
+    infra_alerts = []
+    for entry in infra_data:
+        # Convert to dict if not already
+        if not isinstance(entry, dict):
+            entry = dict(zip(
+                ["location", "generator_ok", "pump_ok", "pipe_leak", "road_condition", "comments", "water_available_liters"],
+                entry
+            ))
+        alert = check_infra_alerts(entry)
+        if alert != "✅ OK":
+            infra_alerts.append({**entry, "alerts": alert})
+
+            subject = f"WASH Alert: {entry['location']} – {alert}"
+            body = (
+                f"Issue detected in {entry['location']}:\n\n"
+                f"Alerts: {alert}\n"
+                f"Comments: {entry['comments']}\n"
+                f"Water Available: {entry['water_available_liters']}L\n"
+                f"Road Condition: {entry['road_condition']}"
+            )
+            send_alert_email(subject, body)
+            send_sms_alert(body)
+
+    if infra_alerts:
+        st.warning("🚨 Issues Detected in the Following Locations")
+        st.dataframe(pd.DataFrame(infra_alerts))
     else:
-        st.info("No infrastructure data yet.")
+        st.success("✅ No Current Infrastructure Alerts")
+    
 
 st.markdown("---")
 st.caption("Prototype v1.2 | Developed by George Arogo")
