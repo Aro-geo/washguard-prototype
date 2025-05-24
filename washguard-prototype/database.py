@@ -47,21 +47,30 @@ CREATE TABLE IF NOT EXISTS infrastructure (
 
 # Insert mock data
 cursor.executemany("INSERT INTO chlorine (tap_stand_id, date, time, chlorine_level) VALUES (?, ?, ?, ?)", [
-    ("Tap-001", "2025-05-21", "08:30:00", 0.15),
-    ("Tap-002", "2025-05-21", "09:00:00", 0.35),
-    ("Tap-003", "2025-05-21", "09:30:00", 0.60),
+    ("TS-001", "2025-05-21", "08:30:00", 0.15),
+    ("TS-002", "2025-05-21", "09:00:00", 0.35),
+    ("TS-003", "2025-05-21", "09:30:00", 0.60),
+    ("TS-004", "2025-05-21", "09:45:00", 0.32),
+    ("TS-005", "2025-05-21", "10:00:00", 0.41),
+    ("TS-006", "2025-05-21", "10:15:00", 0.19),
 ])
 
 cursor.executemany("INSERT INTO quality (source_id, turbidity, odour_present) VALUES (?, ?, ?)", [
     ("Source-A", 3.5, "No"),
     ("Source-B", 6.0, "Yes"),
     ("Source-C", 2.2, "No"),
+    ("Source-D", 2.1, "No"),
+    ("Source-E", 8.4, "Yes"),
 ])
 
 cursor.executemany("INSERT INTO feedback (household_id, feedback_text) VALUES (?, ?)", [
     ("HH-001", "Water pressure is too low."),
     ("HH-002", "We are happy with the clean water."),
     ("HH-003", "Please fix the broken tap."),
+    ("HH-004", "The water quality has improved this week, thank you."),
+    ("HH-005", "Pump is working fine now after repairs."),
+    ("HH-006", "We need more water purification tablets urgently."),
+    ("HH-007", "Distributing water to elderly is challenging due to the distance."),
 ])
 
 cursor.executemany("""
@@ -71,6 +80,8 @@ cursor.executemany("""
     ("Zone A", "Yes", "Yes", "No", "Good", "All systems go", 800),
     ("Zone B", "No", "Yes", "Yes", "Flooded", "Generator failure and pipe leak", 400),
     ("Zone C", "Yes", "No", "No", "Muddy", "Pump broken down", 300),
+    ("Zone D", "Yes", "Yes", "No", "Good", "Regular maintenance scheduled", 15),
+    ("Zone E", "Yes", "Yes", "Yes", "Moderate", "Small pipe leak detected, team dispatched", 12),
 ])
 
 # Commit changes and close
