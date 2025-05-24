@@ -54,19 +54,7 @@ if tab == "Dashboard":
     col3.metric("Community Feedback", f"{len(negative_feedback)} negative", help="Feedback from households")
     col4.metric("Overall Risk Score", "High (100%)", help="Based on all system indicators")
 
-    # --- Chlorine Chart ---
-    st.markdown("### Chlorine Level Monitoring")
-    if not chlorine_df.empty:
-        chlorine_df["datetime"] = pd.to_datetime(chlorine_df["date"] + " " + chlorine_df["time"])
-        chart = alt.Chart(chlorine_df).mark_line(point=True).encode(
-            x="datetime:T",
-            y="chlorine_level:Q"
-        ).properties(title="Chlorine Level Monitoring")
-        st.altair_chart(chart, use_container_width=True)
-    else:
-        st.info("No chlorine data available.")
-
-    # --- Alert Composer ---
+ # --- Alert Composer ---
     st.markdown("### 🔔 Alert System")
     alert_subject = st.text_input("Alert Subject", "WASH Alert: Critical Infrastructure Issue")
     alert_msg = st.text_area("Alert Message", "Describe the issue and required actions...")
