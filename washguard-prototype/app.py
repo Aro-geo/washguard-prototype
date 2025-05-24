@@ -68,8 +68,12 @@ if tab == "Dashboard":
             send_sms_alert(alert_msg)
         st.success("Alert sent successfully!")
 
+    st.markdown("---")
+    st.caption("Prototype v1.2 | Developed by George Arogo")
+
 # --- Water Treatment ---
 if tab == "Water Treatment":
+    st.header("Water Treatment Data")
     st.subheader("💧 Water Treatment Recommendations")
 
     # Chlorine Level
@@ -121,6 +125,7 @@ if tab == "Water Treatment":
 
 # --- Feedback Analysis ---
 elif tab == "Feedback Analysis":
+    st.header("💬 Community Feedback")
     st.subheader("🗣️ Community Feedback NLP")
 
     with st.expander("➕ Add Feedback"):
@@ -146,11 +151,16 @@ elif tab == "Feedback Analysis":
         ax.imshow(wordcloud, interpolation="bilinear")
         ax.axis("off")
         st.pyplot(fig)
+
+        # ADDITIONAL: Show all feedback as a table
+        st.subheader("🗂️ All Feedback")
+        st.table(feedback_data)
     else:
         st.info("No feedback yet.")
 
 # --- Infrastructure Monitor ---
 elif tab == "Infrastructure Monitor":
+    st.header("🛠️ Infrastructure Monitoring")
     st.subheader("⚙️ Infrastructure Status")
 
     with st.expander("➕ Add Infrastructure Status"):
@@ -195,10 +205,16 @@ elif tab == "Infrastructure Monitor":
             return ", ".join(flags) if flags else "✅ OK"
 
         infra_df["status"] = infra_df.apply(check_flag, axis=1)
-        st.dataframe(infra_df)
+        st.dataframe(
+    infra_df.style.applymap(
+        lambda v: 'background-color: #ffcccc' if '🛑' in v or '💧' in v or '❗' in v else 'background-color: #ccffcc',
+        subset=['status']
+    )
+)
 
         alerts = infra_df[infra_df["status"] != "✅ OK"]
         if not alerts.empty:
+            st.header("📊 Infrastructure Alert Dashboard")
             st.warning("🚨 **Infrastructure Alerts**")
             alerted_locations = set()
             for i, row in alerts.iterrows():
@@ -211,8 +227,8 @@ elif tab == "Infrastructure Monitor":
                         f"Water Available: {row['water_available_liters']}L\n"
                         f"Road Condition: {row['road_condition']}"
                     )
-                      send_alert_email(subject, body)
-                      send_sms_alert(body)
+                    send_alert_email(subject, body)
+                    send_sms_alert(body)
                     alerted_locations.add(row['location'])
 
             st.markdown("---")
@@ -226,7 +242,7 @@ elif tab == "Infrastructure Monitor":
             if not high_risk.empty:
                 st.dataframe(high_risk[["location", "water_available_liters", "status"]])
         else:
-            st.info("No infrastructure alerts.")
+            st.success("✅ No Current Infrastructure Alerts")
     else:
         st.info("No infrastructure data yet.")
 
