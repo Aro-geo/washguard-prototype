@@ -211,6 +211,7 @@ elif tab == "Infrastructure Monitor":
                         f"Water Available: {row['water_available_liters']}L\n"
                         f"Road Condition: {row['road_condition']}"
                     )
+                      from notification import send_alert_email, send_sms_alert
 
             st.markdown("---")
             st.markdown("**🔄 Maintenance Task Log (Mock)**")
