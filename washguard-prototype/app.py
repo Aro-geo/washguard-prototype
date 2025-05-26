@@ -29,7 +29,6 @@ if "authenticated" not in st.session_state:
 
 if not st.session_state.authenticated:
     with st.sidebar:
-        st.image("https://upload.wikimedia.org/wikipedia/commons/6/6a/Lock_font_awesome.svg", width=40)
         st.title("🔐 Login")
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
@@ -57,7 +56,9 @@ tab = st.sidebar.radio("📋 Select Module", [
 
 # --- Always load data for dashboard cards ---
 chlorine_data = db.get_all_chlorine()
+st.write("DEBUG chlorine_data:", chlorine_data)
 quality_data = db.get_all_quality()
+st.write("DEBUG quality_data:", quality_data)
 feedback_data = db.get_all_feedback()
 infra_data = db.get_all_infrastructure()
 
@@ -253,6 +254,28 @@ if tab == "📊 Dashboard":
     # Infrastructure Table 
     if not df_infra.empty:
         with st.expander("🔧 Infrastructure Status"):
+            # --- High Risk Warning & Bar Chart ---
+            # Identify high risk zones (water_available_liters < 10)
+            high_risk_zones = df_infra[df_infra["water_available_liters"] < 10]
+            if not high_risk_zones.empty:
+                zone_names = ", ".join(high_risk_zones["location"].astype(str))
+                st.error(
+                    f"**High Risk Zones Detected**\n\n"
+                    f"{len(high_risk_zones)} locations require immediate attention. "
+                    f"Water availability is critical at {zone_names}."
+                )
+
+            # Bar chart for water availability by zone
+            st.markdown("#### Water Availability by Zone")
+            st.caption("Current water availability in liters per household")
+            bar_chart = alt.Chart(df_infra).mark_bar(color="#0099f6").encode(
+                x=alt.X("location:N", title="Zone"),
+                y=alt.Y("water_available_liters:Q", title="Liters"),
+                tooltip=["location", "water_available_liters"]
+            ).properties(height=250)
+            st.altair_chart(bar_chart, use_container_width=True)
+
+            # Status filter and table
             status_filter = st.selectbox("Filter by Status", ["All", "❗", "✅"])
             filtered_infra = df_infra if status_filter == "All" else df_infra[df_infra["status"] == status_filter]
             st.dataframe(filtered_infra)
