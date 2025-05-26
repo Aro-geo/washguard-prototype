@@ -23,12 +23,35 @@ sentiment_analyzer = pipeline("sentiment-analysis")
 # Page config
 st.set_page_config(page_title="WASHGuard AI", layout="wide")
 
+# --- Responsive CSS Tweaks for All Screens and Mobile Navigation ---
+st.markdown("""
+    <style>
+        .block-container { padding-top: 1rem; padding-left: 2rem; padding-right: 2rem; }
+        .stTextInput > div > input,
+        .stNumberInput > div > input,
+        .stTextArea > div > textarea,
+        .stSelectbox > div,
+        .stDateInput > div,
+        .stTimeInput > div,
+        button[kind="primary"] { width: 100% !important; }
+        .element-container:has(canvas) { width: 100% !important; }
+        @media only screen and (max-width: 768px) {
+            .block-container { padding: 0.5rem; }
+            h1, h2, h3, .stMetric { font-size: smaller; }
+            .stButton button { font-size: 0.9rem; }
+            section[data-testid="stSidebar"] { display: none; }
+            button[aria-label="main menu"] { visibility: visible !important; }
+        }
+    </style>
+""", unsafe_allow_html=True)
+
 # --- User Login  ---
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
 if not st.session_state.authenticated:
     with st.sidebar:
+        st.image("https://upload.wikimedia.org/wikipedia/commons/6/6a/Lock_font_awesome.svg", width=40)
         st.title("🔐 Login")
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
@@ -43,6 +66,12 @@ if not st.session_state.authenticated:
 
 st.title("🚰 WASHGuard AI")
 
+# --- Logout Button ---
+with st.sidebar:
+    if st.button("🔓 Logout"):
+        st.session_state.authenticated = False
+        st.experimental_rerun()
+
 # Sidebar navigation
 tab = st.sidebar.radio("📋 Select Module", [
     "📊 Dashboard",
@@ -56,9 +85,7 @@ tab = st.sidebar.radio("📋 Select Module", [
 
 # --- Always load data for dashboard cards ---
 chlorine_data = db.get_all_chlorine()
-st.write("DEBUG chlorine_data:", chlorine_data)
 quality_data = db.get_all_quality()
-st.write("DEBUG quality_data:", quality_data)
 feedback_data = db.get_all_feedback()
 infra_data = db.get_all_infrastructure()
 
@@ -218,7 +245,19 @@ if tab == "📊 Dashboard":
             # Sentiment Pie Chart 
             st.markdown("### 🥧 Feedback Sentiment Analysis")
             sentiment_counts = df_feedback["sentiment"].value_counts()
-            fig, ax = plt.subplots(figsize=(2, 2))  
+            fig, ax = plt.subplots(figsize=(5, 5))  
+
+            # Utility to detect mobile 
+            def is_mobile_view():
+                try:
+                    ua = st.runtime.scriptrunner.get_script_run_ctx().session_info.user_agent
+                    return "Mobile" in ua or "Android" in ua or "iPhone" in ua
+                except Exception:
+                    return False
+
+            is_mobile = is_mobile_view()
+            fig_size = (3, 3) if is_mobile else (5, 5)
+            fig, ax = plt.subplots(figsize=fig_size)
 
             # Custom text color for each sentiment
             def sentiment_text_colors(labels):
@@ -333,6 +372,17 @@ elif tab == "💧 Water Treatment":
 
         # --- Add this block for the chart ---
         if not df.empty:
+            # Utility to detect mobile
+            def is_mobile_view():
+                try:
+                    ua = st.runtime.scriptrunner.get_script_run_ctx().session_info.user_agent
+                    return "Mobile" in ua or "Android" in ua or "iPhone" in ua
+                except Exception:
+                    return False
+
+            is_mobile = is_mobile_view()
+            chart_height = 200 if is_mobile else 400
+
             df = df.copy()
             df["datetime"] = pd.to_datetime(df["date"] + " " + df["time"])
             min_thresh = 0.2
@@ -369,7 +419,8 @@ elif tab == "💧 Water Treatment":
             )
 
             chart = (base + min_line + max_line + min_text + max_text).properties(
-                title="Chlorine Level Monitoring"
+                title="Chlorine Level Monitoring",
+                height=chart_height
             ).configure_title(
                 fontSize=16,
                 anchor='start',
