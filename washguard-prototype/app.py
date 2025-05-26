@@ -28,7 +28,7 @@ if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
 with st.sidebar:
-    st.image("C:\Users\Admin\Documents\washguard-prototype\washguard_logo.png", width=80)
+    st.image("washguard_logo.png", width=80)
     st.title("🔐 Login")
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
