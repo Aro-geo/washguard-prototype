@@ -27,19 +27,19 @@ st.set_page_config(page_title="WASHGuard AI", layout="wide")
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
-with st.sidebar:
-    st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Water_drop_icon.svg/1024px-Water_drop_icon.svg.png", width=80)
-    st.title("🔐 Login")
-    username = st.text_input("Username")
-    password = st.text_input("Password", type="password")
-    if st.button("Login"):
-        if username == os.getenv("APP_USER") and password == os.getenv("APP_PASS"):
-            st.session_state.authenticated = True
-        else:
-            st.warning("Incorrect username or password")
-            st.stop()
-
 if not st.session_state.authenticated:
+    with st.sidebar:
+        st.image("https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Water_drop_icon.svg/1024px-Water_drop_icon.svg.png", width=80)
+        st.title("🔐 Login")
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        if st.button("Login"):
+            if username == os.getenv("APP_USER") and password == os.getenv("APP_PASS"):
+                st.session_state.authenticated = True
+                st.experimental_rerun()  
+            else:
+                st.warning("Incorrect username or password")
+                st.stop()
     st.stop()
 
 st.title("🚰 WASHGuard AI")
