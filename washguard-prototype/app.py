@@ -159,11 +159,52 @@ if tab == "📊 Dashboard":
             selected_id = st.selectbox("Filter by Tap Stand ID", ["All"] + df_chlorine["tap_stand_id"].unique().tolist())
             filtered = df_chlorine if selected_id == "All" else df_chlorine[df_chlorine["tap_stand_id"] == selected_id]
             st.dataframe(filtered)
-            chart = alt.Chart(filtered).mark_line(point=True).encode(
-                x='datetime:T',
-                y='chlorine_level:Q',
-                color='tap_stand_id:N'
-            ).properties(title="Chlorine Levels Over Time")
+
+            # Combine date and time for x-axis
+            filtered = filtered.copy()
+            filtered["datetime"] = pd.to_datetime(filtered["date"] + " " + filtered["time"])
+
+            min_thresh = 0.2
+            max_thresh = 0.5
+
+            base = alt.Chart(filtered).mark_line(point=True, color="#339af0").encode(
+                x=alt.X('datetime:T', title="Time"),
+                y=alt.Y('chlorine_level:Q', title="Chlorine Level (mg/L)", scale=alt.Scale(domain=[0, 0.8])),
+                tooltip=['datetime:T', 'chlorine_level:Q', 'tap_stand_id:N']
+            )
+
+            min_line = alt.Chart(pd.DataFrame({'y': [min_thresh]})).mark_rule(
+                color='red', strokeDash=[4,2]
+            ).encode(y='y:Q')
+
+            max_line = alt.Chart(pd.DataFrame({'y': [max_thresh]})).mark_rule(
+                color='red', strokeDash=[4,2]
+            ).encode(y='y:Q')
+
+            min_text = alt.Chart(pd.DataFrame({'y': [min_thresh], 'label': ['Min Threshold']})).mark_text(
+                align='left', baseline='bottom', dx=5, dy=-5, color='red'
+            ).encode(
+                y='y:Q',
+                text='label:N',
+                x=alt.value(60)
+            )
+
+            max_text = alt.Chart(pd.DataFrame({'y': [max_thresh], 'label': ['Max Threshold']})).mark_text(
+                align='left', baseline='bottom', dx=5, dy=-5, color='red'
+            ).encode(
+                y='y:Q',
+                text='label:N',
+                x=alt.value(60)
+            )
+
+            chart = (base + min_line + max_line + min_text + max_text).properties(
+                title="Chlorine Level Monitoring"
+            ).configure_title(
+                fontSize=16,
+                anchor='start',
+                color='#262730'
+            )
+
             st.altair_chart(chart, use_container_width=True)
 
     # Feedback Table 
@@ -266,6 +307,53 @@ elif tab == "💧 Water Treatment":
         df["status"] = df["chlorine_level"].apply(lambda x: "🔴 Low" if x < 0.2 else "🔴 High" if x > 0.5 else "✅ OK")
         st.dataframe(df)
         st.download_button("Download CSV", df.to_csv(index=False), file_name="chlorine_data.csv")
+
+        # --- Add this block for the chart ---
+        if not df.empty:
+            df = df.copy()
+            df["datetime"] = pd.to_datetime(df["date"] + " " + df["time"])
+            min_thresh = 0.2
+            max_thresh = 0.5
+
+            base = alt.Chart(df).mark_line(point=True, color="#339af0").encode(
+                x=alt.X('datetime:T', title="Time"),
+                y=alt.Y('chlorine_level:Q', title="Chlorine Level (mg/L)", scale=alt.Scale(domain=[0, 0.8])),
+                tooltip=['datetime:T', 'chlorine_level:Q', 'tap_stand_id:N']
+            )
+
+            min_line = alt.Chart(pd.DataFrame({'y': [min_thresh]})).mark_rule(
+                color='red', strokeDash=[4,2]
+            ).encode(y='y:Q')
+
+            max_line = alt.Chart(pd.DataFrame({'y': [max_thresh]})).mark_rule(
+                color='red', strokeDash=[4,2]
+            ).encode(y='y:Q')
+
+            min_text = alt.Chart(pd.DataFrame({'y': [min_thresh], 'label': ['Min Threshold']})).mark_text(
+                align='left', baseline='bottom', dx=5, dy=-5, color='red'
+            ).encode(
+                y='y:Q',
+                text='label:N',
+                x=alt.value(60)
+            )
+
+            max_text = alt.Chart(pd.DataFrame({'y': [max_thresh], 'label': ['Max Threshold']})).mark_text(
+                align='left', baseline='bottom', dx=5, dy=-5, color='red'
+            ).encode(
+                y='y:Q',
+                text='label:N',
+                x=alt.value(60)
+            )
+
+            chart = (base + min_line + max_line + min_text + max_text).properties(
+                title="Chlorine Level Monitoring"
+            ).configure_title(
+                fontSize=16,
+                anchor='start',
+                color='#262730'
+            )
+
+            st.altair_chart(chart, use_container_width=True)
     else:
         st.info("No chlorine readings yet.")
 
