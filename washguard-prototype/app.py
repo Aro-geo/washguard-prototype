@@ -51,7 +51,6 @@ if "authenticated" not in st.session_state:
 
 if not st.session_state.authenticated:
     with st.sidebar:
-        st.image("https://upload.wikimedia.org/wikipedia/commons/6/6a/Lock_font_awesome.svg", width=40)
         st.title("🔐 Login")
         username = st.text_input("Username")
         password = st.text_input("Password", type="password")
@@ -256,7 +255,7 @@ if tab == "📊 Dashboard":
                     return False
 
             is_mobile = is_mobile_view()
-            fig_size = (3, 3) if is_mobile else (5, 5)
+            fig_size = (2, 2) if is_mobile else (3, 3)
             fig, ax = plt.subplots(figsize=fig_size)
 
             # Custom text color for each sentiment
@@ -294,7 +293,6 @@ if tab == "📊 Dashboard":
     if not df_infra.empty:
         with st.expander("🔧 Infrastructure Status"):
             # --- High Risk Warning & Bar Chart ---
-            # Identify high risk zones (water_available_liters < 10)
             high_risk_zones = df_infra[df_infra["water_available_liters"] < 10]
             if not high_risk_zones.empty:
                 zone_names = ", ".join(high_risk_zones["location"].astype(str))
@@ -369,67 +367,6 @@ elif tab == "💧 Water Treatment":
         df["status"] = df["chlorine_level"].apply(lambda x: "🔴 Low" if x < 0.2 else "🔴 High" if x > 0.5 else "✅ OK")
         st.dataframe(df)
         st.download_button("Download CSV", df.to_csv(index=False), file_name="chlorine_data.csv")
-
-        # --- Add this block for the chart ---
-        if not df.empty:
-            # Utility to detect mobile
-            def is_mobile_view():
-                try:
-                    ua = st.runtime.scriptrunner.get_script_run_ctx().session_info.user_agent
-                    return "Mobile" in ua or "Android" in ua or "iPhone" in ua
-                except Exception:
-                    return False
-
-            is_mobile = is_mobile_view()
-            chart_height = 200 if is_mobile else 400
-
-            df = df.copy()
-            df["datetime"] = pd.to_datetime(df["date"] + " " + df["time"])
-            min_thresh = 0.2
-            max_thresh = 0.5
-
-            base = alt.Chart(df).mark_line(point=True, color="#339af0").encode(
-                x=alt.X('datetime:T', title="Time"),
-                y=alt.Y('chlorine_level:Q', title="Chlorine Level (mg/L)", scale=alt.Scale(domain=[0, 0.8])),
-                tooltip=['datetime:T', 'chlorine_level:Q', 'tap_stand_id:N']
-            )
-
-            min_line = alt.Chart(pd.DataFrame({'y': [min_thresh]})).mark_rule(
-                color='red', strokeDash=[4,2]
-            ).encode(y='y:Q')
-
-            max_line = alt.Chart(pd.DataFrame({'y': [max_thresh]})).mark_rule(
-                color='red', strokeDash=[4,2]
-            ).encode(y='y:Q')
-
-            min_text = alt.Chart(pd.DataFrame({'y': [min_thresh], 'label': ['Min Threshold']})).mark_text(
-                align='left', baseline='bottom', dx=5, dy=-5, color='red'
-            ).encode(
-                y='y:Q',
-                text='label:N',
-                x=alt.value(60)
-            )
-
-            max_text = alt.Chart(pd.DataFrame({'y': [max_thresh], 'label': ['Max Threshold']})).mark_text(
-                align='left', baseline='bottom', dx=5, dy=-5, color='red'
-            ).encode(
-                y='y:Q',
-                text='label:N',
-                x=alt.value(60)
-            )
-
-            chart = (base + min_line + max_line + min_text + max_text).properties(
-                title="Chlorine Level Monitoring",
-                height=chart_height
-            ).configure_title(
-                fontSize=16,
-                anchor='start',
-                color='#262730'
-            )
-
-            st.altair_chart(chart, use_container_width=True)
-    else:
-        st.info("No chlorine readings yet.")
 
     # Water Quality
     st.markdown("### 💧 Water Quality Entry")
