@@ -342,7 +342,7 @@ if tab == "📊 Dashboard":
         
 
 # --- Water Treatment ---
-elif tab == "💧 Water Treatment":
+elif tab == "💧  Water Treatment":
     st.subheader("💧 Water Treatment Recommendations")
 
     # Chlorine Level
