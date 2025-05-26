@@ -54,8 +54,9 @@ def table_empty(cursor, table):
 if table_empty(cursor, "chlorine"):
     cursor.executemany("INSERT INTO chlorine (tap_stand_id, date, time, chlorine_level) VALUES (?, ?, ?, ?)", [
         ("TS-001", "2025-05-21", "08:30:00", 0.15),
-        ("TS-002", "2025-05-22", "09:00:00", 0.35),
-        ("TS-003", "2025-05-23", "09:30:00", 0.60),
+        ("TS-002", "2025-05-21", "09:00:00", 0.35),
+        ("TS-003", "2025-05-21", "09:30:00", 0.60),
+        ("TS-003", "2025-05-21", "10:00:00", 0.75),
     ])   
 
 if table_empty(cursor, "quality"):
