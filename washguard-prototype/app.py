@@ -229,7 +229,7 @@ if tab == "📊 Dashboard":
             ).configure_title(
                 fontSize=16,
                 anchor='start',
-                color='#262730'
+                color='white',
             )
 
             st.altair_chart(chart, use_container_width=True)
@@ -255,7 +255,7 @@ if tab == "📊 Dashboard":
                     return False
 
             is_mobile = is_mobile_view()
-            fig_size = (2, 2) if is_mobile else (3, 3)
+            fig_size = (2, 2) if is_mobile else (2, 2)
             fig, ax = plt.subplots(figsize=fig_size)
 
             # Custom text color for each sentiment
