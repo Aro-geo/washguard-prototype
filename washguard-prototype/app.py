@@ -183,7 +183,7 @@ if tab == "📊 Dashboard":
                     return False
 
             is_mobile = is_mobile_view()
-            chart_width = 250 if is_mobile else 600
+            chart_width = 250 if is_mobile else 400
             chart_height = 150 if is_mobile else 400
 
             base = alt.Chart(filtered).mark_line(point=True, color="#339af0").encode(
@@ -192,8 +192,9 @@ if tab == "📊 Dashboard":
                     title="Time",
                     axis=alt.Axis(
                         format='%H:%M',
-                        tickMinStep=600000,  # 10 minutes in milliseconds
+                        tickMinStep=600000,  
                         labelAngle=-45
+                        tickCount="hourminutes"
                     )
                 ),
                 y=alt.Y(
