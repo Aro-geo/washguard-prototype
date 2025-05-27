@@ -13,6 +13,7 @@ import database as db
 from dotenv import load_dotenv
 import altair as alt
 import time
+import numpy as np  # Add this import at the top if not already present
 
 # Load environment variables
 load_dotenv()
@@ -183,8 +184,23 @@ if tab == "📊 Dashboard":
                     return False
 
             is_mobile = is_mobile_view()
-            chart_width = 250 if is_mobile else 400
+            chart_width = 250 if is_mobile else 500
             chart_height = 150 if is_mobile else 400
+
+            # Generate explicit tick values at 10-minute intervals for the x-axis
+            min_time = filtered["datetime"].min().replace(second=0, microsecond=0)
+            max_time = filtered["datetime"].max().replace(second=0, microsecond=0)
+            # Round min_time down to nearest 10 min
+            min_minute = (min_time.minute // 10) * 10
+            min_time = min_time.replace(minute=min_minute)
+            # Round max_time up to nearest 10 min
+            max_minute = ((max_time.minute + 9) // 10) * 10
+            if max_minute == 60:
+                max_time = max_time.replace(hour=max_time.hour + 1, minute=0)
+            else:
+                max_time = max_time.replace(minute=max_minute)
+            
+            tick_values = pd.date_range(start=min_time, end=max_time, freq="10min").to_pydatetime().tolist()
 
             base = alt.Chart(filtered).mark_line(point=True, color="#339af0").encode(
                 x=alt.X(
@@ -192,9 +208,8 @@ if tab == "📊 Dashboard":
                     title="Time",
                     axis=alt.Axis(
                         format='%H:%M',
-                        tickMinStep=600000,  
-                        labelAngle=-45,
-                        tickCount="hourminutes"
+                        values=tick_values,  
+                        labelAngle=-45
                     )
                 ),
                 y=alt.Y(
@@ -212,11 +227,11 @@ if tab == "📊 Dashboard":
             )
 
             min_line = alt.Chart(pd.DataFrame({'y': [min_thresh]})).mark_rule(
-                color='red', strokeDash=[4,2]
+                color='red', strokeDash=[2,2]
             ).encode(y='y:Q')
 
             max_line = alt.Chart(pd.DataFrame({'y': [max_thresh]})).mark_rule(
-                color='red', strokeDash=[4,2]
+                color='red', strokeDash=[2,2]
             ).encode(y='y:Q')
 
             min_text = alt.Chart(pd.DataFrame({'y': [min_thresh], 'label': ['Min Threshold']})).mark_text(
