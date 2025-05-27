@@ -174,10 +174,25 @@ if tab == "📊 Dashboard":
             min_thresh = 0.2
             max_thresh = 0.5
 
+            # Utility to detect mobile (reuse from feedback section)
+            def is_mobile_view():
+                try:
+                    ua = st.runtime.scriptrunner.get_script_run_ctx().session_info.user_agent
+                    return "Mobile" in ua or "Android" in ua or "iPhone" in ua
+                except Exception:
+                    return False
+
+            is_mobile = is_mobile_view()
+            chart_width = 250 if is_mobile else 400
+            chart_height = 150 if is_mobile else 200
+
             base = alt.Chart(filtered).mark_line(point=True, color="#339af0").encode(
                 x=alt.X('datetime:T', title="Time"),
                 y=alt.Y('chlorine_level:Q', title="Chlorine Level (mg/L)", scale=alt.Scale(domain=[0, 0.8])),
                 tooltip=['datetime:T', 'chlorine_level:Q', 'tap_stand_id:N']
+            ).properties(
+                width=chart_width,
+                height=chart_height
             )
 
             min_line = alt.Chart(pd.DataFrame({'y': [min_thresh]})).mark_rule(
