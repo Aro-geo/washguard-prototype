@@ -464,7 +464,32 @@ elif tab == "⚙️ Infrastructure Monitor":
             if submitted:
                 if location:
                     db.insert_infrastructure(location, generator_ok, pump_ok, pipe_leak, road_condition, comments, water_liters)
-                    st.success("Status submitted.")
+                    # --- Immediate Alert Logic ---
+                    issues = []
+                    if generator_ok == "No":
+                        issues.append("🛑 Generator")
+                    if pump_ok == "No":
+                        issues.append("🛑 Pump")
+                    if pipe_leak == "Yes":
+                        issues.append("💧 Leak")
+                    if road_condition in ["Muddy", "Flooded"] and generator_ok == "Yes":
+                        issues.append("🚫 Fuel Delivery Blocked")
+                    if water_liters < 50:
+                        issues.append("❗ Low Water Reserves")
+                    if issues:
+                        status = ", ".join(issues)
+                        subject = f"WASH Alert: {location} – {status}"
+                        body = (
+                            f"Issue at {location}: {status}\n"
+                            f"{comments}\n"
+                            f"Water: {water_liters}L\n"
+                            f"Road: {road_condition}"
+                        )
+                        send_alert_email(subject, body)
+                        send_sms_alert(body)
+                        st.success("🚨 Alert sent to field teams!")
+                    else:
+                        st.success("Status submitted.")
                 else:
                     st.error("Location required.")
 
