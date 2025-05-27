@@ -13,7 +13,7 @@ import database as db
 from dotenv import load_dotenv
 import altair as alt
 import time
-import numpy as np  # Add this import at the top if not already present
+import numpy as np  
 
 # Load environment variables
 load_dotenv()
@@ -184,8 +184,8 @@ if tab == "📊 Dashboard":
                     return False
 
             is_mobile = is_mobile_view()
-            chart_width = 250 if is_mobile else 300
-            chart_height = 150 if is_mobile else 300
+            chart_width = 250 if is_mobile else 400
+            chart_height = 150 if is_mobile else 400
 
             # Generate explicit tick values at 10-minute intervals for the x-axis
             min_time = filtered["datetime"].min().replace(second=0, microsecond=0)
@@ -317,7 +317,7 @@ if tab == "📊 Dashboard":
     if not df_infra.empty:
         with st.expander("🔧 Infrastructure Status"):
             # --- High Risk Warning & Bar Chart ---
-            high_risk_zones = df_infra[df_infra["water_available_liters"] < 10]
+            high_risk_zones = df_infra[df_infra["water_available_liters"] < 50]
             if not high_risk_zones.empty:
                 zone_names = ", ".join(high_risk_zones["location"].astype(str))
                 st.error(
@@ -481,7 +481,7 @@ elif tab == "⚙️ Infrastructure Monitor":
                 issues.append("💧 Leak")
             if row["road_condition"] in ["Muddy", "Flooded"] and row["generator_ok"] == "Yes":
                 issues.append("🚫 Fuel Delivery Blocked")
-            if row["water_available_liters"] < 10:
+            if row["water_available_liters"] < 50:
                 issues.append("❗ Low Water Reserves")
             return ", ".join(issues) if issues else "✅ OK"
         df["status"] = df.apply(flag, axis=1)
@@ -497,7 +497,7 @@ elif tab == "⚙️ Infrastructure Monitor":
             # --- Risk Score ---
             st.markdown("**💡 Risk Prediction**")
             st.markdown("Zones with < 10L, active faults, or fuel blockage are High Risk")
-            high_risk = alerts_df[alerts_df["water_available_liters"] < 100]
+            high_risk = alerts_df[alerts_df["water_available_liters"] < 50]
             if not high_risk.empty:
                 st.dataframe(high_risk[["location", "water_available_liters", "status"]])
 
@@ -522,7 +522,7 @@ elif tab == "⚙️ Infrastructure Monitor":
 # Add caption at the bottom of the sidebar
 st.sidebar.markdown(
     """
-    <div style='position: fixed; bottom: 0; width: 18rem;'>
+    <div style='position: fixed; bottom: 0; width: 16rem;'>
         <small>Prototype v1.4 | Developed by George Arogo</small>
     </div>
     """,
