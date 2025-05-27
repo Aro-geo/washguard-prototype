@@ -183,12 +183,27 @@ if tab == "📊 Dashboard":
                     return False
 
             is_mobile = is_mobile_view()
-            chart_width = 250 if is_mobile else 400
-            chart_height = 150 if is_mobile else 200
+            chart_width = 250 if is_mobile else 600
+            chart_height = 150 if is_mobile else 400
 
             base = alt.Chart(filtered).mark_line(point=True, color="#339af0").encode(
-                x=alt.X('datetime:T', title="Time"),
-                y=alt.Y('chlorine_level:Q', title="Chlorine Level (mg/L)", scale=alt.Scale(domain=[0, 0.8])),
+                x=alt.X(
+                    'datetime:T',
+                    title="Time",
+                    axis=alt.Axis(
+                        format='%H:%M',
+                        tickMinStep=600000,  # 10 minutes in milliseconds
+                        labelAngle=-45
+                    )
+                ),
+                y=alt.Y(
+                    'chlorine_level:Q',
+                    title="Chlorine Level (mg/L)",
+                    scale=alt.Scale(domain=[0, 0.8]),
+                    axis=alt.Axis(
+                        tickMinStep=0.1
+                    )
+                ),
                 tooltip=['datetime:T', 'chlorine_level:Q', 'tap_stand_id:N']
             ).properties(
                 width=chart_width,
