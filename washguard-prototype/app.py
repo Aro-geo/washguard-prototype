@@ -193,7 +193,7 @@ if tab == "📊 Dashboard":
                     axis=alt.Axis(
                         format='%H:%M',
                         tickMinStep=600000,  
-                        labelAngle=-45
+                        labelAngle=-45,
                         tickCount="hourminutes"
                     )
                 ),
