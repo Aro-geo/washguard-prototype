@@ -23,28 +23,6 @@ sentiment_analyzer = pipeline("sentiment-analysis")
 # Page config
 st.set_page_config(page_title="WASHGuard AI", layout="wide")
 
-# --- Responsive CSS Tweaks for All Screens and Mobile Navigation ---
-st.markdown("""
-    <style>
-        .block-container { padding-top: 1rem; padding-left: 2rem; padding-right: 2rem; }
-        .stTextInput > div > input,
-        .stNumberInput > div > input,
-        .stTextArea > div > textarea,
-        .stSelectbox > div,
-        .stDateInput > div,
-        .stTimeInput > div,
-        button[kind="primary"] { width: 100% !important; }
-        .element-container:has(canvas) { width: 100% !important; }
-        @media only screen and (max-width: 768px) {
-            .block-container { padding: 0.5rem; }
-            h1, h2, h3, .stMetric { font-size: smaller; }
-            .stButton button { font-size: 0.9rem; }
-            section[data-testid="stSidebar"] { display: none; }
-            button[aria-label="main menu"] { visibility: visible !important; }
-        }
-    </style>
-""", unsafe_allow_html=True)
-
 # --- User Login  ---
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
@@ -58,6 +36,7 @@ if not st.session_state.authenticated:
             if username == os.getenv("APP_USER") and password == os.getenv("APP_PASS"):
                 st.session_state.authenticated = True
                 st.experimental_rerun()  
+                st.stop()
             else:
                 st.warning("Incorrect username or password")
                 st.stop()
@@ -70,6 +49,7 @@ with st.sidebar:
     if st.button("🔓 Logout"):
         st.session_state.authenticated = False
         st.experimental_rerun()
+        st.stop()
 
 # Sidebar navigation
 tab = st.sidebar.radio("📋 Select Module", [
