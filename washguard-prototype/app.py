@@ -35,6 +35,7 @@ if not st.session_state.authenticated:
         if st.button("Login"):
             if username == os.getenv("APP_USER") and password == os.getenv("APP_PASS"):
                 st.session_state.authenticated = True
+                st.stop()
                 st.experimental_rerun()  
                 st.stop()
             else:
@@ -48,6 +49,7 @@ st.title("🚰 WASHGuard AI")
 with st.sidebar:
     if st.button("🔓 Logout"):
         st.session_state.authenticated = False
+        st.stop()
         st.experimental_rerun()
         st.stop()
 
