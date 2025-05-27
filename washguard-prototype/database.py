@@ -56,7 +56,7 @@ if table_empty(cursor, "chlorine"):
         ("TS-001", "2025-05-21", "08:30:00", 0.15),
         ("TS-002", "2025-05-21", "09:00:00", 0.35),
         ("TS-003", "2025-05-21", "09:30:00", 0.60),
-        ("TS-003", "2025-05-21", "10:00:00", 0.75),
+        ("TS-004", "2025-05-21", "10:00:00", 0.30),
     ])   
 
 if table_empty(cursor, "quality"):
@@ -81,7 +81,7 @@ if table_empty(cursor, "infrastructure"):
     """, [
         ("Zone A", "Yes", "Yes", "No", "Good", "All systems go", 800),
         ("Zone B", "No", "Yes", "Yes", "Flooded", "Generator failure and pipe leak", 400),
-        ("Zone E", "Yes", "Yes", "Yes", "Moderate", "Small pipe leak detected, team dispatched", 12),
+        ("Zone C", "Yes", "Yes", "Yes", "Moderate", "Small pipe leak detected, team dispatched", 40),
     ])
 
 # Commit changes and close
