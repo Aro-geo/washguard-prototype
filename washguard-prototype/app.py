@@ -184,16 +184,14 @@ if tab == "📊 Dashboard":
                     return False
 
             is_mobile = is_mobile_view()
-            chart_width = 250 if is_mobile else 500
-            chart_height = 150 if is_mobile else 400
+            chart_width = 250 if is_mobile else 300
+            chart_height = 150 if is_mobile else 300
 
             # Generate explicit tick values at 10-minute intervals for the x-axis
             min_time = filtered["datetime"].min().replace(second=0, microsecond=0)
             max_time = filtered["datetime"].max().replace(second=0, microsecond=0)
-            # Round min_time down to nearest 10 min
             min_minute = (min_time.minute // 10) * 10
             min_time = min_time.replace(minute=min_minute)
-            # Round max_time up to nearest 10 min
             max_minute = ((max_time.minute + 9) // 10) * 10
             if max_minute == 60:
                 max_time = max_time.replace(hour=max_time.hour + 1, minute=0)
@@ -217,7 +215,7 @@ if tab == "📊 Dashboard":
                     title="Chlorine Level (mg/L)",
                     scale=alt.Scale(domain=[0, 0.8]),
                     axis=alt.Axis(
-                        tickMinStep=0.1
+                        tickMinStep=0.2
                     )
                 ),
                 tooltip=['datetime:T', 'chlorine_level:Q', 'tap_stand_id:N']
