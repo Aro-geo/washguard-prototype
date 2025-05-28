@@ -187,14 +187,16 @@ if tab == "📊 Dashboard":
             chart_height = 150 if is_mobile else 400
 
             # Remove explicit tick values, let Altair use actual event times
-            base = alt.Chart(filtered).mark_line(point=True, color="#339af0").encode(
+              base = alt.Chart(filtered).mark_line(point=True, color="#339af0").encode(
                 x=alt.X(
                     'datetime:T',
                     title="Time",
                     axis=alt.Axis(
                         format='%H:%M',
-                        labelAngle=-45
-                        # Removed: values=tick_values
+                        labelAngle=-45,
+                        ticks=True,           
+                        tickCount=len(filtered["datetime"].unique()),  
+                        values=filtered["datetime"].tolist()           
                     )
                 ),
                 y=alt.Y(
