@@ -192,29 +192,29 @@ if tab == "📊 Dashboard":
 
             # Prepare data for the chart
             df_plot = filtered.copy()
-            df_plot["Time"] = df_plot["datetime"].dt.strftime("%H:%M")
+            df_plot["Datetime"] = df_plot["datetime"]  # Already combined date and time
 
             fig = go.Figure()
 
             fig.add_trace(go.Scatter(
-                x=df_plot["Time"],
+                x=df_plot["Datetime"],  # Use full datetime for x-axis
                 y=df_plot["chlorine_level"],
                 mode="lines+markers",
                 line=dict(color="#339af0"),
                 name="Chlorine Level"
             ))
 
-            # Threshold lines
+            # Threshold lines (horizontal)
             fig.add_shape(
                 type="line",
-                x0=df_plot["Time"].min(),
-                x1=df_plot["Time"].max(),
+                x0=df_plot["Datetime"].min(),
+                x1=df_plot["Datetime"].max(),
                 y0=0.2,
                 y1=0.2,
                 line=dict(color="red", dash="dash"),
             )
             fig.add_annotation(
-                x=df_plot["Time"].min(),
+                x=df_plot["Datetime"].min(),
                 y=0.2,
                 text="Min Threshold",
                 showarrow=False,
@@ -223,14 +223,14 @@ if tab == "📊 Dashboard":
             )
             fig.add_shape(
                 type="line",
-                x0=df_plot["Time"].min(),
-                x1=df_plot["Time"].max(),
+                x0=df_plot["Datetime"].min(),
+                x1=df_plot["Datetime"].max(),
                 y0=0.5,
                 y1=0.5,
                 line=dict(color="red", dash="dash"),
             )
             fig.add_annotation(
-                x=df_plot["Time"].min(),
+                x=df_plot["Datetime"].min(),
                 y=0.5,
                 text="Max Threshold",
                 showarrow=False,
@@ -242,7 +242,7 @@ if tab == "📊 Dashboard":
             last_row = df_plot.iloc[-1]
             if last_row["chlorine_level"] < 0.2:
                 fig.add_trace(go.Scatter(
-                    x=[last_row["Time"]],
+                    x=[last_row["Datetime"]],
                     y=[last_row["chlorine_level"]],
                     text=[f"{last_row['tap_stand_id']}<br>Chlorine: {last_row['chlorine_level']:.2f} mg/L<br><span style='color:red'>● Low – Re-dose</span>"],
                     mode="markers+text",
@@ -253,7 +253,7 @@ if tab == "📊 Dashboard":
 
             fig.update_layout(
                 yaxis=dict(range=[0, 0.8]),
-                xaxis_title="Time",
+                xaxis_title="Date & Time",
                 yaxis_title="Chlorine Level (mg/L)",
                 title="Chlorine Level Monitoring",
                 template="simple_white"
