@@ -186,27 +186,15 @@ if tab == "📊 Dashboard":
             chart_width = 250 if is_mobile else 400
             chart_height = 150 if is_mobile else 400
 
-            # Generate explicit tick values at 10-minute intervals for the x-axis
-            min_time = filtered["datetime"].min().replace(second=0, microsecond=0)
-            max_time = filtered["datetime"].max().replace(second=0, microsecond=0)
-            min_minute = (min_time.minute // 10) * 10
-            min_time = min_time.replace(minute=min_minute)
-            max_minute = ((max_time.minute + 9) // 10) * 10
-            if max_minute == 60:
-                max_time = max_time.replace(hour=max_time.hour + 1, minute=0)
-            else:
-                max_time = max_time.replace(minute=max_minute)
-            
-            tick_values = pd.date_range(start=min_time, end=max_time, freq="10min").to_pydatetime().tolist()
-
+            # Remove explicit tick values, let Altair use actual event times
             base = alt.Chart(filtered).mark_line(point=True, color="#339af0").encode(
                 x=alt.X(
                     'datetime:T',
                     title="Time",
                     axis=alt.Axis(
                         format='%H:%M',
-                        values=tick_values,  
                         labelAngle=-45
+                        # Removed: values=tick_values
                     )
                 ),
                 y=alt.Y(
@@ -520,7 +508,7 @@ elif tab == "⚙️ Infrastructure Monitor":
 
             # --- Risk Score ---
             st.markdown("**💡 Risk Prediction**")
-            st.markdown("Zones with < 10L, active faults, or fuel blockage are High Risk")
+            st.markdown("Zones with < 50L, active faults, or fuel blockage are High Risk")
             high_risk = alerts_df[alerts_df["water_available_liters"] < 50]
             if not high_risk.empty:
                 st.dataframe(high_risk[["location", "water_available_liters", "status"]])
