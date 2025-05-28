@@ -157,56 +157,39 @@ if tab == "📊 Dashboard":
 
     with col1:
         st.markdown(
-        """
-        <div style='border:1.5px solid #d0d0d0; border-radius:10px; padding:0.5em 0.5em 0.2em 0.5em; background:#fafbfc;'>
-            <div style='margin-bottom:-0.7em;'>""" +
-        st._repr_html_(
-            st.metric("Chlorine Alerts 💧", chlorine_alerts)
-        ) +
-        """</div>
-            <div style='font-size:0.85em; margin-top:-0.7em;'>Tap stands with low chlorine levels</div>
-        </div>
-        """, unsafe_allow_html=True
+        "<div style='border:1.5px solid #d0d0d0; border-radius:10px; padding:0.7em 0.7em 0.2em 0.7em; background:#fafbfc;'>",
+        unsafe_allow_html=True
     )
+        st.metric("Chlorine Alerts 💧", chlorine_alerts)
+        st.markdown("<div style='font-size:0.85em; margin-top:-1.2em;'>Tap stands with low chlorine levels</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
     with col2:
         st.markdown(
-        """
-        <div style='border:1.5px solid #d0d0d0; border-radius:10px; padding:0.5em 0.5em 0.2em 0.5em; background:#fafbfc;'>
-            <div style='margin-bottom:-0.7em;'>""" +
-        st._repr_html_(
-            st.metric("Turbidity Issues 🌀", turbidity_issues)
-        ) +
-        """</div>
-            <div style='font-size:0.85em; margin-top:-0.7em;'>Water sources with high turbidity</div>
-        </div>
-        """, unsafe_allow_html=True
+        "<div style='border:1.5px solid #d0d0d0; border-radius:10px; padding:0.7em 0.7em 0.2em 0.7em; background:#fafbfc;'>",
+        unsafe_allow_html=True
     )
+        st.metric("Turbidity Issues 🌀", turbidity_issues)
+        st.markdown("<div style='font-size:0.85em; margin-top:-1.2em;'>Water sources with high turbidity</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
     with col3:
         st.markdown(
-        f"""
-        <div style='border:1.5px solid #d0d0d0; border-radius:10px; padding:0.5em 0.5em 0.2em 0.5em; background:#fafbfc;'>
-            <div style='margin-bottom:-0.7em;'>""" +
-        st._repr_html_(
-            st.metric("Community Feedback 💬", feedback_alerts)
-        ) +
-        f"""</div>
-            <div style='font-size:0.85em; margin-top:-0.7em;'>{feedback_total}</div>
-        </div>
-        """, unsafe_allow_html=True
+        "<div style='border:1.5px solid #d0d0d0; border-radius:10px; padding:0.7em 0.7em 0.2em 0.7em; background:#fafbfc;'>",
+        unsafe_allow_html=True
     )
+        st.metric("Community Feedback 💬", feedback_alerts)
+        st.markdown(f"<div style='font-size:0.85em; margin-top:-1.2em;'>{feedback_total}</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
     with col4:
         st.markdown(
-        """
-        <div style='border:1.5px solid #d0d0d0; border-radius:10px; padding:0.5em 0.5em 0.2em 0.5em; background:#fafbfc;'>
-            <div style='margin-bottom:-0.7em;'>""" +
-        st._repr_html_(
-            st.metric("Overall Risk Score ⚠️", "High (100%)" if risk_high else "Low (0%)")
-        ) +
-        """</div>
-            <div style='font-size:0.85em; margin-top:-0.7em;'>Based on all system indicators</div>
-        </div>
-        """, unsafe_allow_html=True
+        "<div style='border:1.5px solid #d0d0d0; border-radius:10px; padding:0.7em 0.7em 0.2em 0.7em; background:#fafbfc;'>",
+        unsafe_allow_html=True
     )
+        st.metric("Overall Risk Score ⚠️", "High (100%)" if risk_high else "Low (0%)")
+        st.markdown("<div style='font-size:0.85em; margin-top:-1.2em;'>Based on all system indicators</div>", unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
 
     # Chlorine Table and Trend 
     if not df_chlorine.empty:
