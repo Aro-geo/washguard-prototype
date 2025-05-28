@@ -194,9 +194,8 @@ if tab == "📊 Dashboard":
                     axis=alt.Axis(
                         format='%H:%M',
                         labelAngle=-45,
-                        ticks=True,           
-                        tickCount=len(filtered["datetime"].unique()),  
-                        values=filtered["datetime"].tolist()           
+                        values=filtered["datetime"].tolist(),  
+                        ticks=True           
                     )
                 ),
                 y=alt.Y(
