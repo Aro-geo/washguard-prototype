@@ -13,7 +13,6 @@ from dotenv import load_dotenv
 import altair as alt
 import time
 import numpy as np  
-import plotly.graph_objects as go
 
 # Load environment variables
 load_dotenv()
