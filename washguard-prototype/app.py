@@ -314,7 +314,7 @@ if tab == "📊 Dashboard":
 
             ax.axis("equal")
             # Use Streamlit's background color for the pie chart face color
-            fig.patch.set_facecolor(st.get_option("theme.backgroundColor"))
+            fig.patch.set_facecolor(st.get_option("theme.backgroundColor") or '#f0f0f0')
             st.pyplot(fig, use_container_width=False)
 
     # Infrastructure Table 
