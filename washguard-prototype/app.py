@@ -157,16 +157,16 @@ if tab == "📊 Dashboard":
 
     with col1:
         st.metric("Chlorine Alerts 💧", chlorine_alerts)
-        st.caption("Tap stands with low chlorine levels")
+        st.markdown("<div style='font-size:0.85em; margin-top:-0.7em;'>Tap stands with low chlorine levels</div>", unsafe_allow_html=True)
     with col2:
         st.metric("Turbidity Issues 🌀", turbidity_issues)
-        st.caption("Water sources with high turbidity")
+        st.markdown("<div style='font-size:0.85em; margin-top:-0.7em;'>Water sources with high turbidity</div>", unsafe_allow_html=True)
     with col3:
         st.metric("Community Feedback 💬", feedback_alerts)
-        st.caption(feedback_total)
+        st.markdown(f"<div style='font-size:0.85em; margin-top:-0.7em;'>{feedback_total}</div>", unsafe_allow_html=True)
     with col4:
         st.metric("Overall Risk Score ⚠️", "High (100%)" if risk_high else "Low (0%)")
-        st.caption("Based on all system indicators")
+        st.markdown("<div style='font-size:0.85em; margin-top:-0.7em;'>Based on all system indicators</div>", unsafe_allow_html=True)
 
     # Chlorine Table and Trend 
     if not df_chlorine.empty:
