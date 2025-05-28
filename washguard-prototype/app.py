@@ -12,11 +12,12 @@ import database as db
 from dotenv import load_dotenv
 import altair as alt
 import time
-import numpy as np
+import numpy as np  
 import asyncio
 import nest_asyncio
 nest_asyncio.apply()
 import plotly.graph_objects as go  
+
 # Load environment variables
 load_dotenv()
 
@@ -204,8 +205,38 @@ if tab == "📊 Dashboard":
             ))
 
             # Threshold lines
-            fig.add_hline(y=0.2, line_dash="dash", line_color="red", annotation_text="Min Threshold", annotation_position="top left")
-            fig.add_hline(y=0.5, line_dash="dash", line_color="red", annotation_text="Max Threshold", annotation_position="top left")
+            fig.add_shape(
+                type="line",
+                x0=df_plot["Time"].min(),
+                x1=df_plot["Time"].max(),
+                y0=0.2,
+                y1=0.2,
+                line=dict(color="red", dash="dash"),
+            )
+            fig.add_annotation(
+                x=df_plot["Time"].min(),
+                y=0.2,
+                text="Min Threshold",
+                showarrow=False,
+                yshift=10,
+                font=dict(color="red")
+            )
+            fig.add_shape(
+                type="line",
+                x0=df_plot["Time"].min(),
+                x1=df_plot["Time"].max(),
+                y0=0.5,
+                y1=0.5,
+                line=dict(color="red", dash="dash"),
+            )
+            fig.add_annotation(
+                x=df_plot["Time"].min(),
+                y=0.5,
+                text="Max Threshold",
+                showarrow=False,
+                yshift=10,
+                font=dict(color="red")
+            )
 
             # Annotation for the last point if it's low
             last_row = df_plot.iloc[-1]
