@@ -12,8 +12,11 @@ import database as db
 from dotenv import load_dotenv
 import altair as alt
 import time
-import numpy as np  
-
+import numpy as np
+import asyncio
+import nest_asyncio
+nest_asyncio.apply()
+import plotly.graph_objects as go  
 # Load environment variables
 load_dotenv()
 
