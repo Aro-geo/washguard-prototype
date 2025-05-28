@@ -156,52 +156,20 @@ if tab == "📊 Dashboard":
     col1, col2, col3, col4 = st.columns(4)
 
     with col1:
-        with st.container():
-            st.markdown(
-                """
-                <div style='border:1.5px solid #d0d0d0; border-radius:10px; padding:0.7em 0.7em 0.2em 0.7em; background:#fafbfc;'>
-                """,
-                unsafe_allow_html=True
-            )
-            st.metric("Chlorine Alerts 💧", chlorine_alerts)
-            st.markdown("<div style='font-size:0.85em; margin-top:-1.2em;'>Tap stands with low chlorine levels</div>", unsafe_allow_html=True)
-            st.markdown("</div>", unsafe_allow_html=True)
+        st.metric("Chlorine Alerts 💧", chlorine_alerts)
+        st.markdown("<div style='font-size:0.85em; margin-top:-1.2em;'>Tap stands with low chlorine levels</div>", unsafe_allow_html=True)
 
     with col2:
-        with st.container():
-            st.markdown(
-                """
-                <div style='border:1.5px solid #d0d0d0; border-radius:10px; padding:0.7em 0.7em 0.2em 0.7em; background:#fafbfc;'>
-                """,
-                unsafe_allow_html=True
-            )
-            st.metric("Turbidity Issues 🌀", turbidity_issues)
-            st.markdown("<div style='font-size:0.85em; margin-top:-1.2em;'>Water sources with high turbidity</div>", unsafe_allow_html=True)
-            st.markdown("</div>", unsafe_allow_html=True)
+        st.metric("Turbidity Issues 🌀", turbidity_issues)
+        st.markdown("<div style='font-size:0.85em; margin-top:-1.2em;'>Water sources with high turbidity</div>", unsafe_allow_html=True)
 
     with col3:
-        with st.container():
-            st.markdown(
-                """
-                <div style='border:1.5px solid #d0d0d0; border-radius:10px; padding:0.7em 0.7em 0.2em 0.7em; background:#fafbfc;'>
-                """,
-                unsafe_allow_html=True
-            )
-            st.metric("Community Feedback 💬", feedback_alerts)
-            st.markdown(f"<div style='font-size:0.85em; margin-top:-1.2em;'>{feedback_total}</div>", unsafe_allow_html=True)
-            st.markdown("</div>", unsafe_allow_html=True)
+        st.metric("Community Feedback 💬", feedback_alerts)
+        st.markdown(f"<div style='font-size:0.85em; margin-top:-1.2em;'>{feedback_total}</div>", unsafe_allow_html=True)
 
     with col4:
-        with st.container():
-            st.markdown(
-                """
-                <div style='border:1.5px solid #d0d0d0; border-radius:10px; padding:0.7em 0.7em 0.2em 0.7em; background:#fafbfc;'>
-                """,
-                unsafe_allow_html=True
-            )
-            st.metric("Overall Risk Score ⚠️", "High (100%)" if risk_high else "Low (0%)")
-            st.markdown("<div style='font-size:0.85em; margin-top:-1.2em;'>Based on all system indicators</div>", unsafe_allow_html=True)
-            st.markdown("</div>", unsafe_allow_html=True)
+        st.metric("Overall Risk Score ⚠️", "High (100%)" if risk_high else "Low (0%)")
+        st.markdown("<div style='font-size:0.85em; margin-top:-1.2em;'>Based on all system indicators</div>", unsafe_allow_html=True)
 
     # Chlorine Table and Trend 
     if not df_chlorine.empty:
