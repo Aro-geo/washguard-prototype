@@ -13,6 +13,7 @@ from dotenv import load_dotenv
 import altair as alt
 import time
 import numpy as np  
+import plotly.graph_objects as go
 
 # Load environment variables
 load_dotenv()
@@ -186,65 +187,46 @@ if tab == "📊 Dashboard":
             chart_width = 250 if is_mobile else 400
             chart_height = 150 if is_mobile else 400
 
-            # Remove explicit tick values, let Altair use actual event times
-            base = alt.Chart(filtered).mark_line(point=True, color="#339af0").encode(
-                x=alt.X(
-                    'datetime:T',
-                    title="Time",
-                    axis=alt.Axis(
-                        format='%H:%M',
-                        labelAngle=-45,
-                        values=filtered["datetime"].tolist(),  
-                        ticks=True           
-                    )
-                ),
-                y=alt.Y(
-                    'chlorine_level:Q',
-                    title="Chlorine Level (mg/L)",
-                    scale=alt.Scale(domain=[0, 0.8]),
-                    axis=alt.Axis(
-                        tickMinStep=0.2
-                    )
-                ),
-                tooltip=['datetime:T', 'chlorine_level:Q', 'tap_stand_id:N']
-            ).properties(
-                width=chart_width,
-                height=chart_height
+            # Prepare data for the chart
+            df_plot = filtered.copy()
+            df_plot["Time"] = df_plot["datetime"].dt.strftime("%H:%M")
+
+            fig = go.Figure()
+
+            fig.add_trace(go.Scatter(
+                x=df_plot["Time"],
+                y=df_plot["chlorine_level"],
+                mode="lines+markers",
+                line=dict(color="#339af0"),
+                name="Chlorine Level"
+            ))
+
+            # Threshold lines
+            fig.add_hline(y=0.2, line_dash="dash", line_color="red", annotation_text="Min Threshold", annotation_position="top left")
+            fig.add_hline(y=0.5, line_dash="dash", line_color="red", annotation_text="Max Threshold", annotation_position="top left")
+
+            # Annotation for the last point if it's low
+            last_row = df_plot.iloc[-1]
+            if last_row["chlorine_level"] < 0.2:
+                fig.add_trace(go.Scatter(
+                    x=[last_row["Time"]],
+                    y=[last_row["chlorine_level"]],
+                    text=[f"{last_row['tap_stand_id']}<br>Chlorine: {last_row['chlorine_level']:.2f} mg/L<br><span style='color:red'>● Low – Re-dose</span>"],
+                    mode="markers+text",
+                    marker=dict(size=10, color="red"),
+                    textposition="top center",
+                    showlegend=False
+                ))
+
+            fig.update_layout(
+                yaxis=dict(range=[0, 0.8]),
+                xaxis_title="Time",
+                yaxis_title="Chlorine Level (mg/L)",
+                title="Chlorine Level Monitoring",
+                template="simple_white"
             )
 
-            min_line = alt.Chart(pd.DataFrame({'y': [min_thresh]})).mark_rule(
-                color='red', strokeDash=[2,2]
-            ).encode(y='y:Q')
-
-            max_line = alt.Chart(pd.DataFrame({'y': [max_thresh]})).mark_rule(
-                color='red', strokeDash=[2,2]
-            ).encode(y='y:Q')
-
-            min_text = alt.Chart(pd.DataFrame({'y': [min_thresh], 'label': ['Min Threshold']})).mark_text(
-                align='left', baseline='bottom', dx=5, dy=-5, color='red'
-            ).encode(
-                y='y:Q',
-                text='label:N',
-                x=alt.value(60)
-            )
-
-            max_text = alt.Chart(pd.DataFrame({'y': [max_thresh], 'label': ['Max Threshold']})).mark_text(
-                align='left', baseline='bottom', dx=5, dy=-5, color='red'
-            ).encode(
-                y='y:Q',
-                text='label:N',
-                x=alt.value(60)
-            )
-
-            chart = (base + min_line + max_line + min_text + max_text).properties(
-                title="Chlorine Level Monitoring"
-            ).configure_title(
-                fontSize=16,
-                anchor='start',
-                color='white',
-            )
-
-            st.altair_chart(chart, use_container_width=True)
+            st.plotly_chart(fig, use_container_width=True)
 
     # Feedback Table 
     if not df_feedback.empty:
