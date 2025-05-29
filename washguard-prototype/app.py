@@ -21,6 +21,9 @@ import plotly.graph_objects as go
 # Load environment variables
 load_dotenv()
 
+# Set demo mode from environment variable
+DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() == "true"
+
 # Load sentiment pipeline
 sentiment_analyzer = pipeline("sentiment-analysis")
 
@@ -30,6 +33,9 @@ st.set_page_config(page_title="WASHGuard AI", layout="wide")
 # --- User Login  ---
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
+
+if DEMO_MODE:
+    st.session_state.authenticated = True
 
 if not st.session_state.authenticated:
     with st.sidebar:
@@ -178,14 +184,13 @@ if tab == "📊 Dashboard":
             filtered = df_chlorine if selected_id == "All" else df_chlorine[df_chlorine["tap_stand_id"] == selected_id]
             st.dataframe(filtered)
 
-            # Combine date and time for x-axis
             filtered = filtered.copy()
             filtered["datetime"] = pd.to_datetime(filtered["date"] + " " + filtered["time"])
 
             min_thresh = 0.2
             max_thresh = 0.5
 
-            # Utility to detect mobile (reuse from feedback section)
+            # Utility to detect mobile 
             def is_mobile_view():
                 try:
                     ua = st.runtime.scriptrunner.get_script_run_ctx().session_info.user_agent
@@ -199,12 +204,12 @@ if tab == "📊 Dashboard":
 
             # Prepare data for the chart
             df_plot = filtered.copy()
-            df_plot["Datetime"] = df_plot["datetime"]  # Already combined date and time
+            df_plot["Datetime"] = df_plot["datetime"]  
 
             fig = go.Figure()
 
             fig.add_trace(go.Scatter(
-                x=df_plot["Datetime"],  # Use full datetime for x-axis
+                x=df_plot["Datetime"],  
                 y=df_plot["chlorine_level"],
                 mode="lines+markers",
                 line=dict(color="#339af0"),
@@ -280,7 +285,6 @@ if tab == "📊 Dashboard":
             sentiment_counts = df_feedback["sentiment"].value_counts()
             fig, ax = plt.subplots(figsize=(5, 5))  
 
-            # Utility to detect mobile 
             def is_mobile_view():
                 try:
                     ua = st.runtime.scriptrunner.get_script_run_ctx().session_info.user_agent
@@ -320,7 +324,6 @@ if tab == "📊 Dashboard":
                 autotext.set_fontweight("bold")
 
             ax.axis("equal")
-            # Remove axes and background, set pie chart container to transparent
             ax.set_facecolor('none')
             fig.patch.set_alpha(0)  
             st.pyplot(fig, use_container_width=False)
