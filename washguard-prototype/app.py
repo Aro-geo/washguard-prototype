@@ -25,7 +25,7 @@ load_dotenv()
 DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() == "true"
 
 # Load sentiment pipeline
-sentiment_analyzer = pipeline("sentiment-analysis")
+sentiment_analyzer = pipeline("sentiment-analysis", device=-1)
 
 # Page config
 st.set_page_config(page_title="WASHGuard AI", layout="wide")
