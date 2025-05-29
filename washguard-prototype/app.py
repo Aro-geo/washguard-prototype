@@ -21,11 +21,11 @@ import plotly.graph_objects as go
 # Load environment variables
 load_dotenv()
 
-# --- FORCE DEMO MODE ON ---
+# --- Demo mode---
 DEMO_MODE = True
 st.session_state.demo_mode = True
 
-# --- Always load sentiment pipeline ---
+# --- Load sentiment pipeline ---
 sentiment_analyzer = pipeline("sentiment-analysis", device=-1)
 
 # Page config
