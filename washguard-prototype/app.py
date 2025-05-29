@@ -30,22 +30,25 @@ sentiment_analyzer = pipeline("sentiment-analysis")
 # Page config
 st.set_page_config(page_title="WASHGuard AI", layout="wide")
 
-# --- Demo Mode Toggle (before login logic) ---
+# --- Demo Mode Toggle ---
 if "demo_mode" not in st.session_state:
     st.session_state.demo_mode = os.getenv("DEMO_MODE", "false").lower() == "true"
 
 with st.sidebar:
     st.session_state.demo_mode = st.toggle("🧪 Enable Demo Mode", value=st.session_state.demo_mode)
 
+# Set demo mode variable for use in app 
+DEMO_MODE = st.session_state.demo_mode
 
 # --- User Login  ---
 if "authenticated" not in st.session_state:
     st.session_state.authenticated = False
 
+# If demo mode is enabled, skip login
 if DEMO_MODE:
     st.session_state.authenticated = True
 
-if not st.session_state.authenticated:
+if not st.session_state.authenticated and not DEMO_MODE:
     with st.sidebar:
         st.title("🔐 Login")
         username = st.text_input("Username")
