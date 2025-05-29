@@ -24,21 +24,23 @@ load_dotenv()
 # Set demo mode from environment variable
 DEMO_MODE = os.getenv("DEMO_MODE", "false").lower() == "true"
 
-# Load sentiment pipeline
-sentiment_analyzer = pipeline("sentiment-analysis", device=-1)
-
-# Page config
-st.set_page_config(page_title="WASHGuard AI", layout="wide")
-
 # --- Demo Mode Toggle ---
 if "demo_mode" not in st.session_state:
-    st.session_state.demo_mode = os.getenv("DEMO_MODE", "false").lower() == "true"
+    st.session_state.demo_mode = DEMO_MODE
 
 with st.sidebar:
     st.session_state.demo_mode = st.toggle("🧪 Enable Demo Mode", value=st.session_state.demo_mode)
 
-# Set demo mode variable for use in app 
 DEMO_MODE = st.session_state.demo_mode
+
+# Only load sentiment pipeline if not in demo mode
+if not DEMO_MODE:
+    sentiment_analyzer = pipeline("sentiment-analysis", device=-1)
+else:
+    sentiment_analyzer = lambda x: [{"label": "POSITIVE", "score": 1.0}]
+
+# Page config
+st.set_page_config(page_title="WASHGuard AI", layout="wide")
 
 # --- User Login  ---
 if "authenticated" not in st.session_state:
